@@ -1,4 +1,5 @@
 extern crate gio;
+extern crate glib;
 extern crate gtk;
 
 use rustalizer::Equalizer;
@@ -18,7 +19,7 @@ fn main() {
 
     if choice == "GUI" {
         let application = app::GuiApp::new("MyApp");
-        application.build();
+        application.build_ui();
         application.run();
     }
 }

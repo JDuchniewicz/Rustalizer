@@ -1,7 +1,9 @@
 use gio::prelude::*;
 use gtk::prelude::*;
 
-use gtk::{Application, ApplicationWindow, Button};
+use cairo;
+use gtk::{Application, ApplicationWindow, Box, Frame, Label};
+use Equalizer;
 
 // choose the proper application, whether console ncurses or fullfledged gui app?
 pub struct GuiApp {
@@ -14,7 +16,7 @@ impl GuiApp {
     // and then run the run function, for now do the simpler, just move functions outside
     pub fn new(name: &str) -> GuiApp {
         let application =
-            Application::new(Some("com.jduchniewicz.rustalizer.app"), Default::default())
+            gtk::Application::new(Some("com.jduchniewicz.rustalizer.app"), Default::default())
                 .expect("failed to initialize NewApp");
         GuiApp {
             application,
@@ -22,23 +24,47 @@ impl GuiApp {
         }
     }
 
-    pub fn build(&self) -> () {
+    pub fn build_ui(&self) -> () {
         self.application.connect_activate(|app| {
-            let window = ApplicationWindow::new(app);
-            window.set_title("RANDOM"); // how to pass the name from constructor????
+            let window = gtk::ApplicationWindow::new(app);
+
+            let vertical_layout = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            vertical_layout.set_spacing(5);
+            vertical_layout.set_margin_top(10);
+            vertical_layout.set_margin_bottom(10);
+            vertical_layout.set_margin_start(5);
+            vertical_layout.set_margin_end(5);
+
+            let area = gtk::DrawingArea::new();
+
+            window.set_title("rustalizer"); // how to pass the name from constructor????
             window.set_default_size(800, 600);
 
-            let button = Button::with_label("Click me!");
-            button.connect_clicked(|_| {
-                println!("clicked!");
+            // very very simple drawing of rectangle
+            area.connect_draw(move |_w, c| {
+                println!("draw");
+                c.rectangle(1.0, 1.0, 100.0, 200.0);
+                c.fill();
+                gtk::Inhibit(false)
             });
-            window.add(&button);
+            // instead connect a graph object which will update periodically
+
+            let label = gtk::Label::with_mnemonic(Some("BOO")); // TODO: remove
+            vertical_layout.pack_start(&label, true, true, 0);
+            vertical_layout.pack_start(&area, true, true, 0);
+            window.add(&vertical_layout);
 
             window.show_all();
         });
     }
 
     pub fn run(&self) -> () {
+        glib::set_application_name("rustalizer");
         self.application.run(&[]);
+    }
+
+    pub fn connect_source(&self, source: &Equalizer) -> () {
+        // add the data to the graph? // TODO: should it be here? The object heirarchy needs to be
+        // somehow specified and maintained
     }
 }
