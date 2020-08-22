@@ -2,6 +2,7 @@ extern crate gio;
 extern crate glib;
 extern crate gtk;
 
+use rustalizer::AudioConnection;
 use rustalizer::Equalizer;
 use std::env;
 use std::process;
@@ -17,9 +18,19 @@ fn main() {
         process::exit(1);
     });
 
+    // start processing backend here
+    // TODO: depending on the option, change the source
+    let equalizer =
+        Equalizer::new(AudioConnection::File("test.wav".to_string())).unwrap_or_else(|err| {
+            println!("Cannot create Equalizer backend: {}", err);
+            process::exit(1);
+        });
+    equalizer.run();
+
     if choice == "GUI" {
         let application = app::GuiApp::new("MyApp");
         application.build_ui();
+        application.connect_backend(&equalizer);
         application.run();
     }
 }

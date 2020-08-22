@@ -3,7 +3,7 @@ use gtk::prelude::*;
 
 use cairo;
 use gtk::{Application, ApplicationWindow, Box, Frame, Label};
-use Equalizer;
+use rustalizer::Equalizer;
 
 // choose the proper application, whether console ncurses or fullfledged gui app?
 pub struct GuiApp {
@@ -14,7 +14,7 @@ pub struct GuiApp {
 impl GuiApp {
     // the idea is as follows: to be able to chain the calls to the app in a builder like fashion
     // and then run the run function, for now do the simpler, just move functions outside
-    pub fn new(name: &str) -> GuiApp {
+    pub fn new(name: &'static str) -> GuiApp {
         let application =
             gtk::Application::new(Some("com.jduchniewicz.rustalizer.app"), Default::default())
                 .expect("failed to initialize NewApp");
@@ -37,7 +37,7 @@ impl GuiApp {
 
             let area = gtk::DrawingArea::new();
 
-            window.set_title("rustalizer"); // how to pass the name from constructor????
+            window.set_title("Rustalizer"); // lifetime issues with closures, TODO: fix this
             window.set_default_size(800, 600);
 
             // very very simple drawing of rectangle
@@ -63,7 +63,7 @@ impl GuiApp {
         self.application.run(&[]);
     }
 
-    pub fn connect_source(&self, source: &Equalizer) -> () {
+    pub fn connect_backend(&self, source: &Equalizer) -> () {
         // add the data to the graph? // TODO: should it be here? The object heirarchy needs to be
         // somehow specified and maintained
     }

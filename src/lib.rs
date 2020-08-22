@@ -2,7 +2,8 @@
 // data is processed and functions are tested, then it is fed to the gui app via some kind of
 // connectin?
 
-enum AudioConnection {
+pub enum AudioConnection {
+    // TODO: decide whether use String or str
     File(String),   // plays one track and exits
     Stream(String), // Connect to a stream and play audio
 }
@@ -14,20 +15,27 @@ pub struct Equalizer {
 }
 
 impl Equalizer {
-    pub fn new() -> Result<Equalizer, &'static str> {
+    pub fn new(connection: AudioConnection) -> Result<Equalizer, &'static str> {
         // create an audio connection and prepare it
-        Ok(Equalizer {
-            connection: AudioConnection::File("dupa".to_string()),
-            status: false,
-        })
+        match connection {
+            AudioConnection::File(ref _name) => Ok(Equalizer {
+                connection: connection,
+                status: false,
+            }),
+            AudioConnection::Stream(ref _name) => Ok(Equalizer {
+                connection: connection,
+                status: false,
+            }),
+        }
+    }
+
+    pub fn run(&self) -> () {
+        // open the connection
+        // process?
     }
 
     pub fn process() -> () {
         // start processing or periodically process?
         ()
     }
-}
-
-pub fn hey() {
-    println!("YELLO");
 }
