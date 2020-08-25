@@ -1,9 +1,11 @@
 use gio::prelude::*;
 use gtk::prelude::*;
 
+mod graph;
+
+use crate::equalizer::Equalizer;
 use cairo;
 use gtk::{Application, ApplicationWindow, Box, Frame, Label};
-use rustalizer::Equalizer;
 
 // choose the proper application, whether console ncurses or fullfledged gui app?
 pub struct GuiApp {
@@ -39,6 +41,8 @@ impl GuiApp {
 
             window.set_title("Rustalizer"); // lifetime issues with closures, TODO: fix this
             window.set_default_size(800, 600);
+
+            let equalizer_graph = graph::Graph::new();
 
             // very very simple drawing of rectangle
             area.connect_draw(move |_w, c| {

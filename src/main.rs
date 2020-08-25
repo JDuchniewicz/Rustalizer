@@ -2,12 +2,13 @@ extern crate gio;
 extern crate glib;
 extern crate gtk;
 
-use rustalizer::AudioConnection;
-use rustalizer::Equalizer;
+mod app;
+mod equalizer;
+
+use equalizer::AudioConnection;
+use equalizer::Equalizer;
 use std::env;
 use std::process;
-
-mod app;
 
 fn main() {
     // In here we have to decide on steps to undertake: parse command line arguments to display
