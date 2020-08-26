@@ -4,7 +4,6 @@ use gtk::prelude::*;
 mod graph;
 
 use crate::equalizer::Equalizer;
-use cairo;
 use gtk::{Application, ApplicationWindow, Box, Frame, Label};
 
 // choose the proper application, whether console ncurses or fullfledged gui app?
@@ -70,5 +69,7 @@ impl GuiApp {
     pub fn connect_backend(&self, source: &Equalizer) -> () {
         // add the data to the graph? // TODO: should it be here? The object heirarchy needs to be
         // somehow specified and maintained
+        //
+        // connect the periodically ticking function which processes audio to graph
     }
 }
