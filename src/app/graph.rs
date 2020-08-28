@@ -124,7 +124,7 @@ mod tests {
         let mut buf = RingBuffer::<i32>::new(2);
         buf.push(1);
         buf.push(2);
-        println!("{}", buf.size());
+        debug!("{}", buf.size());
         assert!(
             buf.push(3).is_err(),
             "The RingBuffer should not allow for pushing when it is full!"

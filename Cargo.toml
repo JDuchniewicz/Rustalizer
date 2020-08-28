@@ -7,9 +7,11 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-structopt = ""
-gio = ""
+structopt = "^0.3.17"
+log = "^0.4.11"
+simplelog = "^0.7.6"
+gio = "0.9.1"
 glib = "0.10"
 gtk = "0.9"
-cairo-rs = ""
-cpal = ""
+cairo-rs = "0.9.1"
+cpal = "^0.12.1"

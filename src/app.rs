@@ -45,7 +45,7 @@ impl GuiApp {
 
             // very very simple drawing of rectangle
             area.connect_draw(move |_w, c| {
-                println!("draw");
+                debug!("draw");
                 c.rectangle(1.0, 1.0, 100.0, 200.0);
                 c.fill();
                 gtk::Inhibit(false)

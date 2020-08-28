@@ -1,11 +1,15 @@
 extern crate gio;
 extern crate glib;
 extern crate gtk;
+#[macro_use]
+extern crate log;
+extern crate simplelog;
 
 mod app;
 mod equalizer;
 
 use equalizer::Equalizer;
+use simplelog::*;
 use std::process;
 use structopt::StructOpt;
 
@@ -21,7 +25,8 @@ fn main() {
     // In here we have to decide on steps to undertake: parse command line arguments to display
     // either gui app or command line applet
     let args = Cli::from_args();
-    println!("{:?}", args);
+
+    SimpleLogger::init(LevelFilter::Debug, Config::default()).unwrap();
 
     if args.query {
         Equalizer::query();
@@ -31,7 +36,7 @@ fn main() {
     // start processing backend here
     // TODO: depending on the option, change the source
     let equalizer = Equalizer::new(args.device_nr).unwrap_or_else(|err| {
-        println!("Cannot create Equalizer backend: {}", err);
+        debug!("Cannot create Equalizer backend: {}", err);
         process::exit(1);
     });
 
@@ -43,7 +48,7 @@ fn main() {
             application.run();
         }
         _ => {
-            println!("Unknown option, defaulting to console!"); //TODO: fix later once console is supported
+            debug!("Unknown option, defaulting to console!"); //TODO: fix later once console is supported
             process::exit(1);
         }
     }

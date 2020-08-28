@@ -74,7 +74,7 @@ impl DSP {
 
 impl Drop for DSP {
     fn drop(&mut self) {
-        println!("Closing the DSP backend, joining thread.");
+        debug!("Closing the DSP backend, joining thread.");
 
         self.data_in_sender.send(Message::Terminate).unwrap();
 
