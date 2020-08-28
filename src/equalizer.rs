@@ -5,7 +5,7 @@
 mod dsp;
 
 use crate::equalizer::dsp::DSP;
-use cpal::traits::{DeviceTrait, HostTrait};
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Stream;
 
 pub struct Equalizer {
@@ -60,12 +60,33 @@ impl Equalizer {
         self.stream = Some(stream);
     }
 
-    pub fn play(&self) -> () {
-        // open the connection
-        // process?
+    pub fn play(&self) -> Result<(), &'static str> {
+        match &self.stream {
+            Some(_stream) => {
+                self.stream
+                    .as_ref()
+                    .unwrap()
+                    .play()
+                    .expect("cannot play the audio stream!"); // TODO: how to handle errors properly!!!??
+                Ok(())
+            }
+            None => Err("No stream set! Run connect first!"),
+        }
     }
 
-    pub fn stop(&self) -> () {}
+    pub fn pause(&self) -> Result<(), &'static str> {
+        match &self.stream {
+            Some(_stream) => {
+                self.stream
+                    .as_ref()
+                    .unwrap()
+                    .pause()
+                    .expect("cannot stop the audio stream!"); // TODO: how to handle errors properly!!!??
+                Ok(())
+            }
+            None => Err("No stream set! Run connect first!"),
+        }
+    }
 
     // function for processing data, need special AudioCORE
 
