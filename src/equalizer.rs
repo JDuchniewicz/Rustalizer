@@ -44,7 +44,7 @@ impl Equalizer {
 
     pub fn connect(&mut self) -> () {
         let err_fn = move |err| {
-            error!("An error ocurrend on stream: {}", err);
+            error!("An error ocurred on stream: {}", err);
         };
         let stream = self
             .device
