@@ -13,7 +13,6 @@ pub struct DSP {
     worker: Option<thread::JoinHandle<()>>,
     data_in_sender: mpsc::Sender<Message>, // TODO: change it to a generics, need traits?
     data_out_receiver: mpsc::Receiver<Message>,
-    fft: fft::FFT<i32>,
     window: Box<dyn window::Window<i32>>, // to allow for different windows at runtime
 }
 
@@ -29,6 +28,9 @@ impl DSP {
             match data {
                 Message::Data(_) => {
                     // pass to fft
+                    // TODO: connect these two dots -> data from stream with the message passing
+                    // (can I pass a mutable reference inside a message? wrap into a box?
+
                     // pass result to window
                     data_out_sender.send(data);
                 }
@@ -42,7 +44,6 @@ impl DSP {
             worker: Some(thread),
             data_in_sender: data_in_sender,
             data_out_receiver: data_out_receiver,
-            fft: fft::FFT::<i32>::new(),
             window: Box::new(window::Hann::<i32>::new()),
         }
     }
@@ -68,8 +69,6 @@ impl DSP {
     // the graph
     // needs a function which will receive proper audio samples to process and store ready data in
     // a ringbuffer?
-    //
-    // MAYBE NEED TWO DISTINCT MPSC QUEUES? ONE FOR PUSHING ONE FOR RECEIVING :)
 }
 
 impl Drop for DSP {
