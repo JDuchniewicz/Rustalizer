@@ -5,6 +5,13 @@ mod graph;
 
 use crate::equalizer::Equalizer;
 use gtk::{Application, ApplicationWindow, Box, Frame, Label};
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::thread;
+use std::time::Duration;
+
+// TODO: add config file with configs?
+const UPDATE_TIMEOUT: u64 = 500; // ms
 
 // choose the proper application, whether console ncurses or fullfledged gui app?
 pub struct GuiApp {
@@ -25,8 +32,39 @@ impl GuiApp {
         }
     }
 
-    pub fn build_ui(&self) -> () {
-        self.application.connect_activate(|app| {
+    fn setup_timeout(equalizer: &Rc<RefCell<Equalizer>>, graph: &Rc<RefCell<graph::Graph>>) {
+        // new thread for updating feeding graph with data obtained from equalizer
+        let (ready_tx, ready_rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
+
+        thread::spawn(clone!(@strong ready_tx => move || loop {
+            let sleep_duration = Duration::from_millis(UPDATE_TIMEOUT);
+            thread::sleep(sleep_duration);
+            ready_tx
+                .send(false)
+                .expect("Failed to send data through graph refresh channel");
+        }));
+
+        /*
+        ready_rx.attach(
+            None,
+            clone!(@weak graph, @weak equalizer => @default-panic, move |_: bool| {
+                if let Some(payload) = equalizer.borrow().get_processed_samples() {
+                    // do stuf
+                    //graph.borrow_mut().push(payload);
+                }
+                glib::Continue(true)
+            }),
+        );
+        */
+        ready_rx.attach(None, move |_: bool| {
+            debug!("nicely receiving");
+            glib::Continue(true)
+        });
+    }
+
+    // This builds the general UI of the application (for now also the main UI - equalizer graph)
+    pub fn build_ui(&self, equalizer: Rc<RefCell<Equalizer>>) -> () {
+        self.application.connect_activate(move |app| {
             let window = gtk::ApplicationWindow::new(app);
 
             let vertical_layout = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -41,8 +79,23 @@ impl GuiApp {
             window.set_title("Rustalizer"); // lifetime issues with closures, TODO: fix this
             window.set_default_size(800, 600);
 
-            let equalizer_graph = graph::Graph::new();
+            let equalizer_graph: Rc<RefCell<graph::Graph>> =
+                Rc::new(RefCell::new(graph::Graph::new()));
 
+            GuiApp::setup_timeout(&equalizer, &equalizer_graph);
+            /*
+            area.connect_draw(move |w, c| {
+                debug!("Graph draw function");
+                equalizer_graph.draw(
+                    c,
+                    f64::from(w.get_allocated_width()),
+                    f64::from(w.get_allocated_height()),
+                );
+                gtk::Inhibit(false)
+            });
+            */
+
+            // TODO: this is all redundant
             // very very simple drawing of rectangle
             area.connect_draw(move |_w, c| {
                 debug!("draw");
@@ -50,7 +103,6 @@ impl GuiApp {
                 c.fill();
                 gtk::Inhibit(false)
             });
-            // instead connect a graph object which will update periodically
 
             let label = gtk::Label::with_mnemonic(Some("BOO")); // TODO: remove
             vertical_layout.pack_start(&label, true, true, 0);
@@ -64,12 +116,5 @@ impl GuiApp {
     pub fn run(&self) -> () {
         glib::set_application_name("rustalizer");
         self.application.run(&[]);
-    }
-
-    pub fn connect_backend(&self, source: &Equalizer) -> () {
-        // add the data to the graph? // TODO: should it be here? The object heirarchy needs to be
-        // somehow specified and maintained
-        //
-        // connect the periodically ticking function which processes audio to graph
     }
 }

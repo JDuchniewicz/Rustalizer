@@ -7,6 +7,7 @@ mod dsp;
 use crate::equalizer::dsp::DSP;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Stream;
+use std::cell::Cell;
 use std::sync::{Arc, Mutex};
 
 pub struct Equalizer {
@@ -56,7 +57,7 @@ impl Equalizer {
                     // note to self -> because rust moves all what closure captures, need a cloned Arc reference and thread safety -> Mutex
                     // TODO: add a DSP module function
                     // stream events etc here
-                    if let Ok(mut core) = core_arc_clone.try_lock() {
+                    if let Ok(core) = core_arc_clone.try_lock() {
                         core.send(data);
                     }
                 },
@@ -92,6 +93,14 @@ impl Equalizer {
                 Ok(())
             }
             None => Err("No stream set! Run connect first!"),
+        }
+    }
+
+    pub fn get_processed_samples(&self) -> Option<Vec<Cell<f32>>> {
+        if let Ok(core) = self.core.try_lock() {
+            core.receive()
+        } else {
+            None
         }
     }
 

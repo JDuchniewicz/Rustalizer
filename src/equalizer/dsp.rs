@@ -61,7 +61,6 @@ impl DSP {
     }
 
     pub fn receive(&self) -> Option<Vec<Cell<f32>>> {
-        // TODO: consolidate it with the update function of graph
         match self.data_out_receiver.recv().unwrap() {
             Message::Processed(payload) => Some(payload),
             Message::Terminate | Message::Raw(_) => None, // will not happen?
