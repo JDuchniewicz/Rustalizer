@@ -29,10 +29,9 @@ impl DSP {
 
             match data {
                 Message::Raw(payload) => {
+                    debug!("Received data for processing in DSP");
                     // pass to fft
                     let fft_data = fft::fft(payload);
-                    // TODO: connect these two dots -> data from stream with the message passing
-                    // (can I pass a mutable reference inside a message? wrap into a box?
 
                     // pass result to window
                     data_out_sender.send(Message::Processed(fft_data)); // TODO: change the message payload?
@@ -51,11 +50,10 @@ impl DSP {
         }
     }
 
-    pub fn process(&mut self) {}
-
     //send method -> on callback from the application
     pub fn send(&self, data: &mut [f32]) {
         // copy the data and already extend it
+        debug!("Sending data to DSP mpsc");
         self.data_in_sender
             .send(Message::Raw(fft::extend(data, data.len())));
     }
@@ -66,13 +64,6 @@ impl DSP {
             Message::Terminate | Message::Raw(_) => None, // will not happen?
         }
     }
-
-    // receive method -> called from the graph update function
-
-    // this needs to be running in a separate thread and receive from the audio core, pushing to
-    // the graph
-    // needs a function which will receive proper audio samples to process and store ready data in
-    // a ringbuffer?
 }
 
 impl Drop for DSP {

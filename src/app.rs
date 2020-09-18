@@ -44,22 +44,21 @@ impl GuiApp {
                 .expect("Failed to send data through graph refresh channel");
         }));
 
-        /*
         ready_rx.attach(
             None,
-            clone!(@weak graph, @weak equalizer => @default-panic, move |_: bool| {
-                if let Some(payload) = equalizer.borrow().get_processed_samples() {
-                    // do stuf
-                    //graph.borrow_mut().push(payload);
-                }
+            clone!(@strong graph, @weak equalizer => @default-panic, move |_: bool| { // TODO: I am not sure I understand why 'weak' graph failed and 'strong' is ok
+                debug!("Receiving data from equalizer for graph");
+                // Test FFT workings and why it hangs here after uncommenting equalizer code
+                // Rudimentary graph drawing and updating
+                // Understand WTF is going on with these references and cloning
+                //
+               // if let Some(payload) = equalizer.borrow().get_processed_samples() {
+               //     // do stuf
+               //     //graph.borrow_mut().push(payload);
+               // }
                 glib::Continue(true)
             }),
         );
-        */
-        ready_rx.attach(None, move |_: bool| {
-            debug!("nicely receiving");
-            glib::Continue(true)
-        });
     }
 
     // This builds the general UI of the application (for now also the main UI - equalizer graph)
@@ -98,7 +97,6 @@ impl GuiApp {
             // TODO: this is all redundant
             // very very simple drawing of rectangle
             area.connect_draw(move |_w, c| {
-                debug!("draw");
                 c.rectangle(1.0, 1.0, 100.0, 200.0);
                 c.fill();
                 gtk::Inhibit(false)

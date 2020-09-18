@@ -49,6 +49,8 @@ fn main() {
         "GUI" => {
             let application = app::GuiApp::new("MyApp");
             application.build_ui(equalizer.clone()); // move the cloned rc to app closure -> now it also owns it
+            equalizer.borrow_mut().connect();
+            equalizer.borrow().play();
             application.run();
             //application.connect_backend(&equalizer);
         }
