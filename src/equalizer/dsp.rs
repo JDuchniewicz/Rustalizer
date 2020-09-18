@@ -1,11 +1,13 @@
 mod fft;
 mod window;
 
+use std::cell::Cell;
 use std::sync::mpsc;
 use std::thread;
 
 enum Message {
-    Data(Vec<i32>),
+    Raw(Vec<Cell<f32>>),
+    Processed(Vec<Cell<f32>>),
     Terminate,
 }
 
@@ -13,7 +15,7 @@ pub struct DSP {
     worker: Option<thread::JoinHandle<()>>,
     data_in_sender: mpsc::Sender<Message>, // TODO: change it to a generics, need traits?
     data_out_receiver: mpsc::Receiver<Message>,
-    window: Box<dyn window::Window<i32>>, // to allow for different windows at runtime
+    window: Box<dyn window::Window<i32> + Send>, // to allow for different windows at runtime
 }
 
 impl DSP {
@@ -26,15 +28,16 @@ impl DSP {
             let data = data_in_receiver.recv().unwrap();
 
             match data {
-                Message::Data(_) => {
+                Message::Raw(payload) => {
                     // pass to fft
+                    let fft_data = fft::fft(payload);
                     // TODO: connect these two dots -> data from stream with the message passing
                     // (can I pass a mutable reference inside a message? wrap into a box?
 
                     // pass result to window
-                    data_out_sender.send(data);
+                    data_out_sender.send(Message::Processed(fft_data)); // TODO: change the message payload?
                 }
-                Message::Terminate => {
+                Message::Terminate | Message::Processed(_) => {
                     break;
                 }
             }
@@ -51,15 +54,17 @@ impl DSP {
     pub fn process(&mut self) {}
 
     //send method -> on callback from the application
-    pub fn send(&self, data: Vec<i32>) {
-        self.data_in_sender.send(Message::Data(data));
+    pub fn send(&self, data: &mut [f32]) {
+        // copy the data and already extend it
+        self.data_in_sender
+            .send(Message::Raw(fft::extend(data, data.len())));
     }
 
-    pub fn receive(&self) -> Option<Vec<i32>> {
+    pub fn receive(&self) -> Option<Vec<Cell<f32>>> {
         // TODO: consolidate it with the update function of graph
         match self.data_out_receiver.recv().unwrap() {
-            Message::Data(payload) => Some(payload),
-            Message::Terminate => None, // will not happen?
+            Message::Processed(payload) => Some(payload),
+            Message::Terminate | Message::Raw(_) => None, // will not happen?
         }
     }
 

@@ -7,10 +7,11 @@ mod dsp;
 use crate::equalizer::dsp::DSP;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Stream;
+use std::sync::{Arc, Mutex};
 
 pub struct Equalizer {
     // handle to audio file,stream etc
-    core: DSP,
+    core: Arc<Mutex<DSP>>,
     device: cpal::Device,
     config: cpal::StreamConfig,
     stream: Option<Stream>,
@@ -34,7 +35,7 @@ impl Equalizer {
             .with_max_sample_rate();
 
         Ok(Equalizer {
-            core: DSP::new(),
+            core: Arc::new(Mutex::new(DSP::new())), // TODO: extend to different formats?
             device,
             config: supported_config.into(),
             stream: None,
@@ -46,12 +47,18 @@ impl Equalizer {
         let err_fn = move |err| {
             error!("An error ocurred on stream: {}", err);
         };
+        let core_arc_clone = self.core.clone(); // local reference that is shared with the closure
         let stream = self
             .device
             .build_output_stream(
                 &self.config,
-                move |data: &mut [f32], _: &cpal::OutputCallbackInfo| { // TODO: add a DSP module function
-                     // stream events etc here
+                move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+                    // note to self -> because rust moves all what closure captures, need a cloned Arc reference and thread safety -> Mutex
+                    // TODO: add a DSP module function
+                    // stream events etc here
+                    if let Ok(mut core) = core_arc_clone.try_lock() {
+                        core.send(data);
+                    }
                 },
                 err_fn,
             )

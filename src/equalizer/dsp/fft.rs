@@ -1,10 +1,7 @@
 use std::cell::Cell;
 
-const FFT_SIZE: i32 = 1024; // tweak it depending on the sample batch size
-
-// the input array has to be prepared - filled with complex samples (interleaved)
-
-pub fn fft<T>(data: &mut [T], len: usize) -> Vec<Cell<T>>
+// receives already extended vector of both real and imaginary values
+pub fn fft<T>(mut data: Vec<Cell<T>>) -> Vec<Cell<T>>
 where
     T: Copy
         + Default
@@ -16,20 +13,18 @@ where
     // in this function compute the FFT
     // first change encoding for Danielson-Lanczos
     // then do the algorithm and return by reference
-    let mut extended_vec = extend(data, len);
-
-    let n: usize = extended_vec.len();
+    let n: usize = data.len();
     let mut j = 0;
     let mut m: usize;
     for i in (0..n).step_by(2) {
         if j > i {
-            extended_vec.swap(j, i); // swap real
-            extended_vec.swap(j + 1, i + 1); // swap complex
+            data.swap(j, i); // swap real
+            data.swap(j + 1, i + 1); // swap complex
         }
 
         if (j / 2) < (n / 4) {
-            extended_vec.swap(n - (i + 2), n - (j + 2));
-            extended_vec.swap(n - (i + 2) + 1, n - (j + 2) + 1);
+            data.swap(n - (i + 2), n - (j + 2));
+            data.swap(n - (i + 2) + 1, n - (j + 2) + 1);
         }
 
         m = n / 2;
@@ -66,14 +61,14 @@ where
         for m in (1..mmax).step_by(2) {
             for i in (m..n).step_by(istep) {
                 j = i + mmax;
-                tempr = wr * Into::<f32>::into(extended_vec[j - 1].get())
-                    - wi * Into::<f32>::into(extended_vec[j].get());
-                tempi = wr * Into::<f32>::into(extended_vec[j].get())
-                    + wi * Into::<f32>::into(extended_vec[j - 1].get());
-                extended_vec[j - 1].set(extended_vec[i - 1].get() - Into::<T>::into(tempr));
-                extended_vec[j].set(extended_vec[i].get() - Into::<T>::into(tempi));
-                extended_vec[i - 1].set(extended_vec[i - 1].get() + Into::<T>::into(tempr));
-                extended_vec[i].set(extended_vec[i].get() + Into::<T>::into(tempi));
+                tempr = wr * Into::<f32>::into(data[j - 1].get())
+                    - wi * Into::<f32>::into(data[j].get());
+                tempi = wr * Into::<f32>::into(data[j].get())
+                    + wi * Into::<f32>::into(data[j - 1].get());
+                data[j - 1].set(data[i - 1].get() - Into::<T>::into(tempr));
+                data[j].set(data[i].get() - Into::<T>::into(tempi));
+                data[i - 1].set(data[i - 1].get() + Into::<T>::into(tempr));
+                data[i].set(data[i].get() + Into::<T>::into(tempi));
             }
             wtemp = wr;
             wr = wtemp * wpr - wi * wpi + wr;
@@ -82,11 +77,11 @@ where
         mmax = istep;
     }
 
-    extended_vec
+    data
 }
 
 // extends the array with samples of value 0
-fn extend<T>(data: &mut [T], len: usize) -> Vec<Cell<T>>
+pub fn extend<T>(data: &mut [T], len: usize) -> Vec<Cell<T>>
 where
     T: Copy + Default,
 {
