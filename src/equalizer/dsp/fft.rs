@@ -1,20 +1,29 @@
 use std::cell::Cell;
 
 // receives already extended vector of both real and imaginary values
+// requires the input data to be a power of two, lest wrong indexing happens!
 pub fn fft<T>(mut data: Vec<Cell<T>>) -> Vec<Cell<T>>
 where
     T: Copy
         + Default
+        + std::cmp::PartialEq
         + std::convert::From<f32>
         + std::ops::Sub<Output = T>
         + std::ops::Add<Output = T>,
     f32: std::convert::From<T>,
 {
+    // FOR DEVELOPMENT TIME, how to debug such things in Rust ?
+    for i in 0..data.len() {
+        // DEBUG
+        if data[i].get() != T::default() {
+            debug!("YAY {}", i);
+        }
+    }
     // in this function compute the FFT
     // first change encoding for Danielson-Lanczos
     // then do the algorithm and return by reference
     let n: usize = data.len();
-    debug!("FFT len: {}", n);
+    info!("FFT len: {}", n);
     let mut j = 0;
     let mut m: usize;
     for i in (0..n / 2).step_by(2) {
@@ -52,7 +61,7 @@ where
 
     while n > mmax {
         istep = mmax << 1;
-        theta = 2.0 * std::f32::consts::PI / mmax as f32; // here signum decides whether 1 or -1 (IFFT_
+        theta = 2.0 * std::f32::consts::PI / mmax as f32; // here sign decides whether 1 or -1 (IFFT)
         wtemp = (theta * 0.5).sin();
         wpr = -2.0 * wtemp * wtemp;
         wpi = theta.sin();
@@ -61,11 +70,11 @@ where
 
         for m in (1..mmax).step_by(2) {
             for i in (m..=n).step_by(istep) {
-                j = i + mmax; // TODO: this goes out of range?????!!! apparently for non-powers of 2 it will fail
-                debug!(
-                    "Values: i {} j {} m {} mmax {} istep {}",
-                    i, j, m, mmax, istep
-                );
+                j = i + mmax;
+                //                debug!(
+                //                    "Values: i {} j {} m {} mmax {} istep {}",
+                //                    i, j, m, mmax, istep
+                //                );
                 tempr = wr * Into::<f32>::into(data[j - 1].get())
                     - wi * Into::<f32>::into(data[j].get());
                 tempi = wr * Into::<f32>::into(data[j].get())
@@ -85,17 +94,78 @@ where
     data
 }
 
-// extends the array with samples of value 0
-pub fn extend<T>(data: &mut [T], len: usize) -> Vec<Cell<T>>
+// finds the nearest power of 2 the length satisfies and zero-extends the buffer
+// after preparing the data for FFT (interleaving)
+pub fn prepare_data<T>(data: &mut [T], len: usize) -> Vec<Cell<T>>
 where
     T: Copy + Default,
 {
-    let mut extended = Vec::with_capacity(2 * len);
+    let as_float: f32 = len as f32;
+    let nearest_two_pow = as_float.log2().floor() + 1.0;
+    let new_len = 2 << nearest_two_pow as usize;
+    info!("Prepare data for FFT, len {}", new_len);
+    let mut extended = Vec::with_capacity(new_len);
     for i in 0..len {
         extended.push(Cell::new(data[i]));
         extended.push(Cell::new(T::default()));
     }
+    for _ in 2 * len..new_len {
+        extended.push(Cell::new(T::default()));
+    }
     extended
+}
+
+// TODO: write docs
+// converts the input FFT data to num_bins size
+pub fn to_bins<T>(data: Vec<Cell<T>>, num_bins: usize) -> Vec<T>
+// TODO: probably need a result for checking, the buffer should be discarded asap?
+// INCOMING DATA IS 0?>????
+where
+    T: Copy
+        + Default
+        + std::fmt::Display
+        + std::ops::Mul<Output = T>
+        + std::ops::Add<Output = T>
+        + std::ops::AddAssign
+        + std::convert::From<f32>,
+    f32: std::convert::From<T>,
+{
+    // care only to N/2 frequencies
+    // real intreleaved with imaginary
+    // 0 is the dc offset
+    // TODO: probably need a place for magic numbers definitions? FFT constants etc
+    //debug!("to bins data in len {}", data.len());
+    if data.len() > 44100 {
+        error!(
+            "The input data was greater than the sampling rate, probably CPAL hiccup - ignoring"
+        );
+        return Vec::new();
+    }
+    let bin_width = 44100 / num_bins; // TODO: this is not what intended -> fixed bin width 44100/20
+    let mut bin_idx: usize = 0;
+    let mut freq_magnitude: f32 = 0.;
+    let mut bins = Vec::<T>::with_capacity(num_bins);
+    for _ in 0..num_bins {
+        bins.push(T::default());
+    }
+
+    // Here they need to be thrown into appropriate bin
+    for i in (0..data.len() / 2).step_by(2) {
+        bin_idx = i.div_euclid(bin_width);
+        //debug!("incoming data for i {} is {}", i, data[i].get());
+        freq_magnitude = Into::<f32>::into(
+            data[i].get() * data[i].get() + data[i + 1].get() * data[i + 1].get(),
+        );
+        //debug!("the magnitude at idx {} is {}", i, freq_magnitude);
+        bins[bin_idx] += Into::<T>::into(freq_magnitude);
+    }
+
+    // finally they should be normalized
+    for i in 0..bins.len() {
+        debug!("Bin {} value {}", i, bins[i]);
+    }
+    // TODO: normalize
+    bins
 }
 
 // tests on floats TODO: add tests for i16?

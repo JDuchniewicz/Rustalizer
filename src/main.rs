@@ -52,7 +52,6 @@ fn main() {
             equalizer.borrow_mut().connect();
             equalizer.borrow().play();
             application.run();
-            //application.connect_backend(&equalizer);
         }
         _ => {
             debug!("Unknown option, defaulting to console!"); //TODO: fix later once console is supported

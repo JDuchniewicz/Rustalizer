@@ -32,7 +32,8 @@ impl GuiApp {
         }
     }
 
-    fn setup_timeout(equalizer: &Rc<RefCell<Equalizer>>, graph: &Rc<RefCell<graph::Graph>>) {
+    fn setup_timeout(equalizer: &Rc<RefCell<Equalizer>>, graph: &Rc<RefCell<graph::Graph<f32>>>) {
+        // TODO: big refactor once it works, make it all generic properly!
         // new thread for updating feeding graph with data obtained from equalizer
         let (ready_tx, ready_rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
@@ -47,15 +48,16 @@ impl GuiApp {
         ready_rx.attach(
             None,
             clone!(@strong graph, @weak equalizer => @default-panic, move |_: bool| { // TODO: I am not sure I understand why 'weak' graph failed and 'strong' is ok
-                debug!("Receiving data from equalizer for graph");
+                info!("Receiving data from equalizer for graph");
                 // Test FFT workings and why it hangs here after uncommenting equalizer code
                 // Rudimentary graph drawing and updating
                 // Understand WTF is going on with these references and cloning
                 //
-               // if let Some(payload) = equalizer.borrow().get_processed_samples() {
-               //     // do stuf
-               //     //graph.borrow_mut().push(payload);
-               // }
+                if let Some(payload) = equalizer.borrow().get_processed_samples() {
+                    // This is raw FFT, could be formatted better -> 20 frequency bins and unwrap
+                    // from cell
+                    graph.borrow_mut().push(payload);
+                }
                 glib::Continue(true)
             }),
         );
@@ -78,23 +80,24 @@ impl GuiApp {
             window.set_title("Rustalizer"); // lifetime issues with closures, TODO: fix this
             window.set_default_size(800, 600);
 
-            let equalizer_graph: Rc<RefCell<graph::Graph>> =
+            let equalizer_graph: Rc<RefCell<graph::Graph<f32>>> =
                 Rc::new(RefCell::new(graph::Graph::new()));
 
+            // connect refreshing context to gtk
+            equalizer_graph.borrow_mut().attach_to(&vertical_layout);
+
             GuiApp::setup_timeout(&equalizer, &equalizer_graph);
-            /*
+
             area.connect_draw(move |w, c| {
-                debug!("Graph draw function");
-                equalizer_graph.draw(
+                equalizer_graph.borrow_mut().draw(
                     c,
                     f64::from(w.get_allocated_width()),
                     f64::from(w.get_allocated_height()),
                 );
                 gtk::Inhibit(false)
             });
-            */
 
-            // TODO: this is all redundant
+            /*
             // very very simple drawing of rectangle
             area.connect_draw(move |_w, c| {
                 c.rectangle(1.0, 1.0, 100.0, 200.0);
@@ -104,6 +107,7 @@ impl GuiApp {
 
             let label = gtk::Label::with_mnemonic(Some("BOO")); // TODO: remove
             vertical_layout.pack_start(&label, true, true, 0);
+            */
             vertical_layout.pack_start(&area, true, true, 0);
             window.add(&vertical_layout);
 

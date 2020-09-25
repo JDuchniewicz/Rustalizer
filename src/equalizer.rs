@@ -57,6 +57,7 @@ impl Equalizer {
                     // note to self -> because rust moves all what closure captures, need a cloned Arc reference and thread safety -> Mutex
                     // TODO: add a DSP module function
                     // stream events etc here
+                    info!("Data received from CPAL, length {}", data.len());
                     if let Ok(core) = core_arc_clone.try_lock() {
                         core.send(data);
                     }
@@ -96,7 +97,7 @@ impl Equalizer {
         }
     }
 
-    pub fn get_processed_samples(&self) -> Option<Vec<Cell<f32>>> {
+    pub fn get_processed_samples(&self) -> Option<Vec<f32>> {
         if let Ok(core) = self.core.try_lock() {
             core.receive()
         } else {

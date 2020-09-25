@@ -7,7 +7,7 @@ use std::thread;
 
 enum Message {
     Raw(Vec<Cell<f32>>),
-    Processed(Vec<Cell<f32>>),
+    Processed(Vec<f32>),
     Terminate,
 }
 
@@ -15,7 +15,7 @@ pub struct DSP {
     worker: Option<thread::JoinHandle<()>>,
     data_in_sender: mpsc::Sender<Message>, // TODO: change it to a generics, need traits?
     data_out_receiver: mpsc::Receiver<Message>,
-    window: Box<dyn window::Window<i32> + Send>, // to allow for different windows at runtime
+    window: Box<dyn window::Window<f32> + Send>, // to allow for different windows at runtime
 }
 
 impl DSP {
@@ -29,12 +29,14 @@ impl DSP {
 
             match data {
                 Message::Raw(payload) => {
-                    debug!("Received data for processing in DSP");
+                    info!("Received data for processing in DSP");
                     // pass to fft
                     let fft_data = fft::fft(payload);
 
                     // pass result to window
-                    data_out_sender.send(Message::Processed(fft_data)); // TODO: change the message payload?
+                    // bin the processed samples to several bins
+                    let binned = fft::to_bins(fft_data, 20); // TODO: magic numbers!
+                    data_out_sender.send(Message::Processed(binned)); // TODO: change the message payload?
                 }
                 Message::Terminate | Message::Processed(_) => {
                     break;
@@ -46,19 +48,20 @@ impl DSP {
             worker: Some(thread),
             data_in_sender: data_in_sender,
             data_out_receiver: data_out_receiver,
-            window: Box::new(window::Hann::<i32>::new()),
+            window: Box::new(window::Hann::<f32>::new()),
         }
     }
 
     //send method -> on callback from the application
     pub fn send(&self, data: &mut [f32]) {
         // copy the data and already extend it
-        debug!("Sending data to DSP mpsc");
+        info!("Sending data to DSP mpsc");
         self.data_in_sender
-            .send(Message::Raw(fft::extend(data, data.len())));
+            .send(Message::Raw(fft::prepare_data(data, data.len())))
+            .expect("Could not send data via MPSC from the CPAL core");
     }
 
-    pub fn receive(&self) -> Option<Vec<Cell<f32>>> {
+    pub fn receive(&self) -> Option<Vec<f32>> {
         match self.data_out_receiver.recv().unwrap() {
             Message::Processed(payload) => Some(payload),
             Message::Terminate | Message::Raw(_) => None, // will not happen?
