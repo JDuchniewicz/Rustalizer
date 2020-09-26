@@ -96,7 +96,7 @@ where
 
 // finds the nearest power of 2 the length satisfies and zero-extends the buffer
 // after preparing the data for FFT (interleaving)
-pub fn prepare_data<T>(data: &mut [T], len: usize) -> Vec<Cell<T>>
+pub fn prepare_data<T>(data: &[T], len: usize) -> Vec<Cell<T>>
 where
     T: Copy + Default,
 {

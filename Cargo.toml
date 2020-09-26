@@ -16,3 +16,6 @@ gtk = "0.9"
 gdk = "0.13.2"
 cairo-rs = "0.9.1"
 cpal = "^0.12.1"
+
+[patch.crates-io]
+cpal = { path = "/home/jduchniewicz/.cargo/registry/src/github.com-1ecc6299db9ec823/cpal-0.12.1/" }

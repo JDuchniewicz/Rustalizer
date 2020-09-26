@@ -53,7 +53,7 @@ impl DSP {
     }
 
     //send method -> on callback from the application
-    pub fn send(&self, data: &mut [f32]) {
+    pub fn send(&self, data: &[f32]) {
         // copy the data and already extend it
         info!("Sending data to DSP mpsc");
         self.data_in_sender

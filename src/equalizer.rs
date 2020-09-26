@@ -21,24 +21,47 @@ pub struct Equalizer {
 
 impl Equalizer {
     pub fn new(device_nr: Option<u32>) -> Result<Equalizer, &'static str> {
-        let host = cpal::default_host(); //TODO: for now default host
+        let host = cpal::default_host(); //TODO: for now default host [ALSA]
 
-        let device = host
-            .default_output_device()
-            .expect("no output device available"); //TODO: cpal does not support different device numbers???
+        let mut device = host
+            .default_input_device()
+            .expect("no input device available");
+
+        for dev in host.input_devices().unwrap() {
+            if dev.name().unwrap().contains("sysdefault:CARD=Loopback") {
+                device = dev;
+                debug!("device {}", device.name().unwrap());
+            }
+        }
 
         let mut supported_configs_range = device
-            .supported_output_configs()
+            .supported_input_configs()
             .expect("error while querying configs");
-        let supported_config = supported_configs_range
-            .next()
-            .expect("No supported config!")
-            .with_max_sample_rate();
+
+        /*
+        for config in &mut supported_configs_range {
+            debug!(
+                "supported_config ch {} min_sr {:?} max_sr {:?} buf_size {:?} sample_fmt {:?}",
+                config.channels(),
+                config.min_sample_rate(),
+                config.max_sample_rate(),
+                config.buffer_size(),
+                config.sample_format()
+            );
+        }
+        */
+        // TODO: match on input parameters and construct the config
+        // check them for correctness with supported range
+        let config = cpal::StreamConfig {
+            channels: 1, // TODO: crashes on more than one channel
+            sample_rate: cpal::SampleRate(44100),
+            buffer_size: cpal::BufferSize::Default, // TODO: magic numbers for buffer cause ALSA panics
+        };
 
         Ok(Equalizer {
             core: Arc::new(Mutex::new(DSP::new())), // TODO: extend to different formats?
             device,
-            config: supported_config.into(),
+            config,
             stream: None,
             status: false,
         })
@@ -51,9 +74,9 @@ impl Equalizer {
         let core_arc_clone = self.core.clone(); // local reference that is shared with the closure
         let stream = self
             .device
-            .build_output_stream(
+            .build_input_stream(
                 &self.config,
-                move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+                move |data, _: &cpal::InputCallbackInfo| {
                     // note to self -> because rust moves all what closure captures, need a cloned Arc reference and thread safety -> Mutex
                     // TODO: add a DSP module function
                     // stream events etc here
