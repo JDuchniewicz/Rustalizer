@@ -5,20 +5,12 @@ use std::cell::Cell;
 pub fn fft<T>(mut data: Vec<Cell<T>>) -> Vec<Cell<T>>
 where
     T: Copy
-        + Default
         + std::cmp::PartialEq
         + std::convert::From<f32>
         + std::ops::Sub<Output = T>
         + std::ops::Add<Output = T>,
     f32: std::convert::From<T>,
 {
-    // FOR DEVELOPMENT TIME, how to debug such things in Rust ?
-    for i in 0..data.len() {
-        // DEBUG
-        if data[i].get() != T::default() {
-            debug!("YAY {}", i);
-        }
-    }
     // in this function compute the FFT
     // first change encoding for Danielson-Lanczos
     // then do the algorithm and return by reference
@@ -117,12 +109,11 @@ where
 
 // TODO: write docs
 // converts the input FFT data to num_bins size
-pub fn to_bins<T>(data: Vec<Cell<T>>, num_bins: usize) -> Vec<T>
+pub fn to_bins<T>(data: Vec<Cell<T>>, num_bins: usize) -> Vec<usize>
 // TODO: probably need a result for checking, the buffer should be discarded asap?
 // INCOMING DATA IS 0?>????
 where
     T: Copy
-        + Default
         + std::fmt::Display
         + std::ops::Mul<Output = T>
         + std::ops::Add<Output = T>
@@ -141,31 +132,37 @@ where
         );
         return Vec::new();
     }
-    let bin_width = 44100 / num_bins; // TODO: this is not what intended -> fixed bin width 44100/20
-    let mut bin_idx: usize = 0;
-    let mut freq_magnitude: f32 = 0.;
-    let mut bins = Vec::<T>::with_capacity(num_bins);
+    let bin_width: usize = ((data.len() / 4) as f32 / num_bins as f32).ceil() as usize;
+    let mut bin_idx: usize = 1; // index from 1 but store at 0
+    let mut freq_magnitude: f32;
+    let mut bins = Vec::<f32>::with_capacity(num_bins);
     for _ in 0..num_bins {
-        bins.push(T::default());
+        bins.push(0.);
     }
 
+    info!("bin_width {} data.len() {}", bin_width, data.len());
     // Here they need to be thrown into appropriate bin
     for i in (0..data.len() / 2).step_by(2) {
-        bin_idx = i.div_euclid(bin_width);
+        if i / 2 > bin_idx * bin_width {
+            bin_idx += 1;
+        }
         //debug!("incoming data for i {} is {}", i, data[i].get());
         freq_magnitude = Into::<f32>::into(
             data[i].get() * data[i].get() + data[i + 1].get() * data[i + 1].get(),
         );
         //debug!("the magnitude at idx {} is {}", i, freq_magnitude);
-        bins[bin_idx] += Into::<T>::into(freq_magnitude);
+        bins[bin_idx - 1] += freq_magnitude;
     }
 
     // finally they should be normalized
-    for i in 0..bins.len() {
-        debug!("Bin {} value {}", i, bins[i]);
+    let normalized = bins
+        .iter()
+        .map(|&b| b as usize / bin_width)
+        .collect::<Vec<usize>>();
+    for i in 0..normalized.len() {
+        info!("NormBin {} value {}", i, normalized[i]);
     }
-    // TODO: normalize
-    bins
+    normalized
 }
 
 // tests on floats TODO: add tests for i16?

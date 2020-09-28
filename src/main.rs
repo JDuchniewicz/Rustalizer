@@ -19,7 +19,8 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug)]
 struct Cli {
     app_mode: String,
-    device_nr: Option<u32>,
+    device_name: Option<String>,
+    host_name: Option<String>,
     #[structopt(short, long)]
     query: bool,
 }
@@ -29,7 +30,7 @@ fn main() {
     // either gui app or command line applet
     let args = Cli::from_args();
 
-    SimpleLogger::init(LevelFilter::Debug, Config::default()).unwrap();
+    SimpleLogger::init(LevelFilter::Warn, Config::default()).unwrap();
 
     if args.query {
         Equalizer::query();
@@ -38,12 +39,12 @@ fn main() {
 
     // start processing backend here
     // TODO: depending on the option, change the source
-    let equalizer = Rc::new(RefCell::new(Equalizer::new(args.device_nr).unwrap_or_else(
-        |err| {
-            debug!("Cannot create Equalizer backend: {}", err);
+    let equalizer = Rc::new(RefCell::new(
+        Equalizer::new(args.device_name, args.host_name).unwrap_or_else(|err| {
+            error!("Cannot create Equalizer backend: {}", err);
             process::exit(1);
-        },
-    )));
+        }),
+    ));
 
     match args.app_mode.as_str() {
         "GUI" => {
@@ -54,7 +55,7 @@ fn main() {
             application.run();
         }
         _ => {
-            debug!("Unknown option, defaulting to console!"); //TODO: fix later once console is supported
+            error!("Unknown option, defaulting to console!"); //TODO: fix later once console is supported
             process::exit(1);
         }
     }

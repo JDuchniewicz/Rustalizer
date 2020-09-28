@@ -7,7 +7,7 @@ use std::thread;
 
 enum Message {
     Raw(Vec<Cell<f32>>),
-    Processed(Vec<f32>),
+    Processed(Vec<usize>),
     Terminate,
 }
 
@@ -30,10 +30,10 @@ impl DSP {
             match data {
                 Message::Raw(payload) => {
                     info!("Received data for processing in DSP");
+                    // window the data prior to FFTing
                     // pass to fft
                     let fft_data = fft::fft(payload);
 
-                    // pass result to window
                     // bin the processed samples to several bins
                     let binned = fft::to_bins(fft_data, 20); // TODO: magic numbers!
                     data_out_sender.send(Message::Processed(binned)); // TODO: change the message payload?
@@ -61,7 +61,7 @@ impl DSP {
             .expect("Could not send data via MPSC from the CPAL core");
     }
 
-    pub fn receive(&self) -> Option<Vec<f32>> {
+    pub fn receive(&self) -> Option<Vec<usize>> {
         match self.data_out_receiver.recv().unwrap() {
             Message::Processed(payload) => Some(payload),
             Message::Terminate | Message::Raw(_) => None, // will not happen?
@@ -71,7 +71,7 @@ impl DSP {
 
 impl Drop for DSP {
     fn drop(&mut self) {
-        debug!("Closing the DSP backend, joining thread.");
+        info!("Closing the DSP backend, joining thread.");
 
         self.data_in_sender.send(Message::Terminate).unwrap();
 

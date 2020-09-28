@@ -1,13 +1,8 @@
-// this should act upon data received from the audio connection module?
-// data is processed and functions are tested, then it is fed to the gui app via some kind of
-// connectin?
-
 mod dsp;
 
 use crate::equalizer::dsp::DSP;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Stream;
-use std::cell::Cell;
 use std::sync::{Arc, Mutex};
 
 pub struct Equalizer {
@@ -20,17 +15,35 @@ pub struct Equalizer {
 }
 
 impl Equalizer {
-    pub fn new(device_nr: Option<u32>) -> Result<Equalizer, &'static str> {
-        let host = cpal::default_host(); //TODO: for now default host [ALSA]
+    pub fn new(
+        device_name: Option<String>,
+        host_name: Option<String>,
+    ) -> Result<Equalizer, &'static str> {
+        let mut host = cpal::default_host(); // default host [ALSA]
+        if let Some(hostname) = host_name.as_ref() {
+            for h in cpal::available_hosts() {
+                if h.name() == hostname {
+                    if let Ok(host_enum) = cpal::host_from_id(h) {
+                        host = host_enum;
+                    } else {
+                        warn!("There is no such host, defaulting to ALSA");
+                    }
+                }
+            }
+        }
 
         let mut device = host
             .default_input_device()
             .expect("no input device available");
 
-        for dev in host.input_devices().unwrap() {
-            if dev.name().unwrap().contains("sysdefault:CARD=Loopback") {
-                device = dev;
-                debug!("device {}", device.name().unwrap());
+        if let Some(devicename) = device_name.as_ref() {
+            for dev in host.input_devices().unwrap() {
+                if let Ok(dev_name) = dev.name() {
+                    if dev_name.eq(devicename) {
+                        info!("device {}", device.name().unwrap());
+                        device = dev;
+                    }
+                }
             }
         }
 
@@ -120,7 +133,7 @@ impl Equalizer {
         }
     }
 
-    pub fn get_processed_samples(&self) -> Option<Vec<f32>> {
+    pub fn get_processed_samples(&self) -> Option<Vec<usize>> {
         if let Ok(core) = self.core.try_lock() {
             core.receive()
         } else {
@@ -132,21 +145,21 @@ impl Equalizer {
 
     pub fn query() -> () {
         let available_hosts = cpal::available_hosts();
-        debug!("Available hosts: \n {:?}", available_hosts);
+        error!("Available hosts: \n {:?}", available_hosts);
 
         for host_id in available_hosts {
-            debug!("{}", host_id.name());
+            error!("{}", host_id.name());
             let host = cpal::host_from_id(host_id).unwrap();
 
             let default_in = host.default_input_device().map(|e| e.name().unwrap());
             let default_out = host.default_output_device().map(|e| e.name().unwrap());
-            debug!("Default Input Device: \n {:?}", default_in);
-            debug!("Default Output Device: \n {:?}", default_out);
+            error!("Default Input Device: \n {:?}", default_in);
+            error!("Default Output Device: \n {:?}", default_out);
 
             let devices = host.devices().unwrap();
 
             for (device_idx, device) in devices.enumerate() {
-                debug!("{} \t {}", device_idx, device.name().unwrap());
+                error!("{} \t {}", device_idx, device.name().unwrap());
             }
         }
     }

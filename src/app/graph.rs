@@ -95,7 +95,7 @@ impl<T: std::clone::Clone + std::marker::Copy> Graph<T> {
         to.add(&self.horizontal_layout);
     }
 
-    pub fn push(&mut self, data: Vec<T>) {
+    pub fn push(&mut self, data: Vec<usize>) {
         // push data for drawing into the buffer
     }
 
