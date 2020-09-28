@@ -32,7 +32,7 @@ impl GuiApp {
         }
     }
 
-    fn setup_timeout(equalizer: &Rc<RefCell<Equalizer>>, graph: &Rc<RefCell<graph::Graph<f32>>>) {
+    fn setup_timeout(equalizer: &Rc<RefCell<Equalizer>>, graph: &Rc<RefCell<graph::Graph>>) {
         // TODO: big refactor once it works, make it all generic properly!
         // new thread for updating feeding graph with data obtained from equalizer
         let (ready_tx, ready_rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
@@ -80,7 +80,7 @@ impl GuiApp {
             window.set_title("Rustalizer"); // lifetime issues with closures, TODO: fix this
             window.set_default_size(800, 600);
 
-            let equalizer_graph: Rc<RefCell<graph::Graph<f32>>> =
+            let equalizer_graph: Rc<RefCell<graph::Graph>> =
                 Rc::new(RefCell::new(graph::Graph::new()));
 
             // connect refreshing context to gtk

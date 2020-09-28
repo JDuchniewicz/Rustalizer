@@ -30,7 +30,7 @@ fn main() {
     // either gui app or command line applet
     let args = Cli::from_args();
 
-    SimpleLogger::init(LevelFilter::Warn, Config::default()).unwrap();
+    SimpleLogger::init(LevelFilter::Error, Config::default()).unwrap();
 
     if args.query {
         Equalizer::query();
