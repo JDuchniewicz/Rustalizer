@@ -1,7 +1,6 @@
 use cairo::Context;
 use gdk::WindowExt;
 use gtk::{BoxExt, ContainerExt, DrawingArea, WidgetExt};
-use std::mem;
 use std::num::Wrapping;
 
 // Read data each frame, push it to the ringbuffer
@@ -88,12 +87,13 @@ pub struct Graph {
 }
 
 impl Graph {
-    pub fn new() -> Graph {
+    pub fn new(width: i32, height: i32) -> Graph {
         let g = Graph {
             data: RingBuffer::new(16),
             area: DrawingArea::new(),
             horizontal_layout: gtk::Box::new(gtk::Orientation::Horizontal, 0),
         };
+        g.area.set_size_request(width, height);
         g.horizontal_layout.pack_start(&g.area, true, true, 0);
         g.horizontal_layout.set_margin_start(5);
         g
@@ -113,6 +113,7 @@ impl Graph {
         }
     }
 
+    // TODO: dirty algorithm for that
     pub fn draw(&mut self, ctx: &cairo::Context, width: f64, height: f64) {
         // paint background with grey
         ctx.set_source_rgb(0.5, 0.5, 0.5);
@@ -124,22 +125,24 @@ impl Graph {
         // go column by column altering colours and drawing up with a magnitude
         let x_incr = width / 20.;
         let y_incr = height / 30.;
+        //dbg!(x_incr, y_incr);
         let y_sep = 1.;
         let x_sep = 1.;
         let mut x_pos = 0.;
-        let mut y_pos = 0.;
+        let mut y_pos;
         error!("before drawing");
 
         if let Ok(data) = self.data.pop() {
-            error!("Drawing");
-            for i in data.into_iter() {
-                let mut y_ctr = 0.;
+            for i in data {
+                dbg!(i);
+                let mut y_ctr = i;
+                y_pos = 0.;
                 // print each column
-                // TODO: dirty algorithm for that
                 if i > 30 {
-                    y_ctr = 30.;
+                    y_ctr = 30;
                 }
                 for _ in 0..y_ctr as usize {
+                    //error!("X: {} Y:{}", x_pos, y_pos);
                     // draw column
                     ctx.set_source_rgb(0., 0., 1.0);
                     ctx.rectangle(x_pos, y_pos, x_incr - x_sep, y_incr - y_sep);
@@ -147,7 +150,7 @@ impl Graph {
 
                     y_pos += y_sep; // what?
                                     // draw separator
-                    y_pos += y_ctr;
+                    y_pos += y_incr;
                 }
                 x_pos += x_incr;
             }
