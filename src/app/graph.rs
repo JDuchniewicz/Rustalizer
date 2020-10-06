@@ -103,14 +103,11 @@ impl Graph {
         to.add(&self.horizontal_layout);
     }
 
-    pub fn push(&mut self, data: Vec<usize>) -> Result<(), &'static str> {
+    pub fn push(&mut self, data: Vec<usize>) -> Result<(), Error> {
         error!("Received data");
-        if let Ok(_) = self.data.push(data) {
-            self.invalidate();
-            Ok(())
-        } else {
-            Err("Failed to push data to Graph")
-        }
+        self.data.push(data)?;
+        self.invalidate();
+        Ok(())
     }
 
     // TODO: dirty algorithm for that

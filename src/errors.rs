@@ -20,6 +20,7 @@ pub enum Error {
     PauseStream(cpal::PauseStreamError),
     StreamOperation(StreamOp),
     BufferOperation(BufferOp),
+    FFTOperation,
 }
 
 impl std::error::Error for Error {
@@ -31,6 +32,7 @@ impl std::error::Error for Error {
             Error::PauseStream(ref err) => Some(err),
             Error::StreamOperation(_) => None,
             Error::BufferOperation(_) => None,
+            Error::FFTOperation => None,
         }
     }
 }
@@ -54,6 +56,7 @@ impl std::fmt::Display for Error {
                 BufferOp::Push => write!(f, "Push failed! The RingBuffer is full!"),
                 BufferOp::Pop => write!(f, "Pop failed! The RingBuffer is empty!"),
             },
+            Error::FFTOperation=> write!(f, "The input data was greater than the sampling rate, probably CPAL hiccup - ignoring"),
         }
     }
 }

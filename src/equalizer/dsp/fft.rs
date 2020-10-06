@@ -1,3 +1,4 @@
+use crate::errors::Error;
 use std::cell::Cell;
 
 // receives already extended vector of both real and imaginary values
@@ -113,7 +114,7 @@ where
 
 // TODO: write docs
 // converts the input FFT data to num_bins size
-pub fn to_bins<T>(data: Vec<Cell<T>>, num_bins: usize) -> Vec<usize>
+pub fn to_bins<T>(data: Vec<Cell<T>>, num_bins: usize) -> Result<Vec<usize>, Error>
 // TODO: probably need a result for checking, the buffer should be discarded asap?
 // INCOMING DATA IS 0?>????
 where
@@ -131,10 +132,7 @@ where
     // TODO: probably need a place for magic numbers definitions? FFT constants etc
     //debug!("to bins data in len {}", data.len());
     if data.len() > 44100 {
-        error!(
-            "The input data was greater than the sampling rate, probably CPAL hiccup - ignoring"
-        );
-        return Vec::new();
+        return Err(Error::FFTOperation);
     }
     let bin_width: usize = ((data.len() / 4) as f32 / num_bins as f32).ceil() as usize;
     let mut bin_idx: usize = 1; // index from 1 but store at 0
@@ -166,7 +164,7 @@ where
     for i in 0..normalized.len() {
         info!("NormBin {} value {}", i, normalized[i]);
     }
-    normalized
+    Ok(normalized)
 }
 
 // tests on floats TODO: add tests for i16?

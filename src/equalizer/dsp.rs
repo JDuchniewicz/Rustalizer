@@ -37,7 +37,12 @@ impl DSP {
 
                     // bin the processed samples to several bins
                     let binned = fft::to_bins(fft_data, 20); // TODO: magic numbers!
-                    data_out_sender.send(Message::Processed(binned)); // TODO: change the message payload?
+                    if binned.is_ok() {
+                        data_out_sender.send(Message::Processed(binned.unwrap()));
+                    // TODO: change the message payload?
+                    } else {
+                        error!("{}", binned.err().unwrap());
+                    }
                 }
                 Message::Terminate | Message::Processed(_) => {
                     break;
