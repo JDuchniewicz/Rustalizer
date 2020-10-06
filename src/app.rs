@@ -11,7 +11,7 @@ use std::thread;
 use std::time::Duration;
 
 // TODO: add config file with configs?
-const UPDATE_TIMEOUT: u64 = 500; // ms
+const UPDATE_TIMEOUT: u64 = 300; // ms
 
 // choose the proper application, whether console ncurses or fullfledged gui app?
 pub struct GuiApp {
@@ -56,7 +56,9 @@ impl GuiApp {
                 if let Some(payload) = equalizer.borrow().get_processed_samples() {
                     // This is raw FFT, could be formatted better -> 20 frequency bins and unwrap
                     // from cell
-                    graph.borrow_mut().push(payload);
+                    if let Err(_) = graph.borrow_mut().push(payload) {
+                        error!("Graph is full, data is flowing in too fast!");
+                    }
                 }
                 glib::Continue(true)
             }),
@@ -92,20 +94,6 @@ impl GuiApp {
             let equalizer_graph = GuiApp::connect_graph(equalizer_graph);
 
             GuiApp::setup_timeout(&equalizer, &equalizer_graph);
-
-            /*
-            // very very simple drawing of rectangle
-            area.connect_draw(move |_w, c| {
-                c.rectangle(1.0, 1.0, 100.0, 200.0);
-                c.fill();
-                gtk::Inhibit(false)
-            });
-
-
-            let label = gtk::Label::with_mnemonic(Some("BOO")); // TODO: remove
-            vertical_layout.pack_start(&label, true, true, 0);
-            */
-            //vertical_layout.pack_start(&area, true, true, 0);
             window.add(&vertical_layout);
 
             window.show_all();

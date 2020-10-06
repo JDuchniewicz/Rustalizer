@@ -15,7 +15,8 @@ pub struct DSP {
     worker: Option<thread::JoinHandle<()>>,
     data_in_sender: mpsc::Sender<Message>, // TODO: change it to a generics, need traits?
     data_out_receiver: mpsc::Receiver<Message>,
-    window: Box<dyn window::Window<f32> + Send>, // to allow for different windows at runtime
+    window_type: window::WindowType, // there is an idea for runtime-changeable window_type
+                                     // add windowing function closure?
 }
 
 impl DSP {
@@ -29,8 +30,8 @@ impl DSP {
 
             match data {
                 Message::Raw(payload) => {
+                    // TODO: can separate L/R channels? try some more advanced stuff later?
                     info!("Received data for processing in DSP");
-                    // window the data prior to FFTing
                     // pass to fft
                     let fft_data = fft::fft(payload);
 
@@ -48,7 +49,7 @@ impl DSP {
             worker: Some(thread),
             data_in_sender: data_in_sender,
             data_out_receiver: data_out_receiver,
-            window: Box::new(window::Hann::<f32>::new()),
+            window_type: window::WindowType::Hann,
         }
     }
 
@@ -57,7 +58,11 @@ impl DSP {
         // copy the data and already extend it
         info!("Sending data to DSP mpsc");
         self.data_in_sender
-            .send(Message::Raw(fft::prepare_data(data, data.len())))
+            .send(Message::Raw(fft::prepare_data(
+                data,
+                data.len(),
+                window::choose_window(self.window_type.clone()), // window the data prior to FFTing (TODO: maybe some kind of composable pipeline of actions? it would make it easier in the future)
+            )))
             .expect("Could not send data via MPSC from the CPAL core");
     }
 

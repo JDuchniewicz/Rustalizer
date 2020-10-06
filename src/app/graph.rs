@@ -1,4 +1,3 @@
-use cairo::Context;
 use gdk::WindowExt;
 use gtk::{BoxExt, ContainerExt, DrawingArea, WidgetExt};
 use std::num::Wrapping;
@@ -134,9 +133,8 @@ impl Graph {
 
         if let Ok(data) = self.data.pop() {
             for i in data {
-                dbg!(i);
                 let mut y_ctr = i;
-                y_pos = 0.;
+                y_pos = height - y_incr - y_sep;
                 // print each column
                 if i > 30 {
                     y_ctr = 30;
@@ -148,9 +146,9 @@ impl Graph {
                     ctx.rectangle(x_pos, y_pos, x_incr - x_sep, y_incr - y_sep);
                     ctx.fill();
 
-                    y_pos += y_sep; // what?
+                    y_pos -= y_sep; // what?
                                     // draw separator
-                    y_pos += y_incr;
+                    y_pos -= y_incr;
                 }
                 x_pos += x_incr;
             }

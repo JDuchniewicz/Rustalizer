@@ -88,7 +88,11 @@ where
 
 // finds the nearest power of 2 the length satisfies and zero-extends the buffer
 // after preparing the data for FFT (interleaving)
-pub fn prepare_data<T>(data: &[T], len: usize) -> Vec<Cell<T>>
+pub fn prepare_data<T>(
+    data: &[T],
+    len: usize,
+    window_func: impl Fn(T, usize, usize) -> T,
+) -> Vec<Cell<T>>
 where
     T: Copy + Default,
 {
@@ -98,7 +102,7 @@ where
     info!("Prepare data for FFT, len {}", new_len);
     let mut extended = Vec::with_capacity(new_len);
     for i in 0..len {
-        extended.push(Cell::new(data[i]));
+        extended.push(Cell::new(window_func(data[i], i, len)));
         extended.push(Cell::new(T::default()));
     }
     for _ in 2 * len..new_len {
