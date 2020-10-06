@@ -1,3 +1,4 @@
+use crate::errors::{BufferOp, Error};
 use gdk::WindowExt;
 use gtk::{BoxExt, ContainerExt, DrawingArea, WidgetExt};
 use std::num::Wrapping;
@@ -26,9 +27,9 @@ impl<T: Default + Clone> RingBuffer<T> {
         }
     }
 
-    pub fn push(&mut self, val: T) -> Result<(), &'static str> {
+    pub fn push(&mut self, val: T) -> Result<(), Error> {
         if self.full() {
-            Err("Push failed! The RingBuffer is full!")
+            Err(Error::BufferOperation(BufferOp::Push))
         } else {
             //self.write += 1;
             self.write = self.write.wrapping_add(1);
@@ -42,9 +43,9 @@ impl<T: Default + Clone> RingBuffer<T> {
         }
     }
 
-    pub fn pop(&mut self) -> Result<T, &'static str> {
+    pub fn pop(&mut self) -> Result<T, Error> {
         if self.empty() {
-            Err("Pop failed! The RingBuffer is empty!")
+            Err(Error::BufferOperation(BufferOp::Pop))
         } else {
             //self.read += 1;
             self.read = self.read.wrapping_add(1);

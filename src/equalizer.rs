@@ -1,6 +1,8 @@
 mod dsp;
 
 use crate::equalizer::dsp::DSP;
+use crate::errors::{Error, StreamOp};
+use anyhow::{Context, Result};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Stream;
 use std::sync::{Arc, Mutex};
@@ -16,9 +18,9 @@ pub struct Equalizer {
 
 impl Equalizer {
     pub fn new(
-        device_name: Option<String>,
-        host_name: Option<String>,
-    ) -> Result<Equalizer, &'static str> {
+        device_name: &Option<String>,
+        host_name: &Option<String>,
+    ) -> Result<Equalizer, Error> {
         let mut host = cpal::default_host(); // default host [ALSA]
         if let Some(hostname) = host_name.as_ref() {
             for h in cpal::available_hosts() {
@@ -32,26 +34,29 @@ impl Equalizer {
             }
         }
 
-        let mut device = host
-            .default_input_device()
-            .expect("no input device available");
+        let mut device: Option<cpal::Device> = None;
 
         if let Some(devicename) = device_name.as_ref() {
             for dev in host.input_devices().unwrap() {
                 if let Ok(dev_name) = dev.name() {
                     if dev_name.eq(devicename) {
-                        info!("device {}", device.name().unwrap());
-                        device = dev;
+                        device.replace(dev);
+                        info!("device {}", device.as_ref().unwrap().name().unwrap());
                     }
                 }
             }
         }
 
+        if device.is_none() {
+            return Err(Error::NoCpalDevice);
+        }
+
+        /*
         let mut supported_configs_range = device
+            .unwrap()
             .supported_input_configs()
             .expect("error while querying configs");
 
-        /*
         for config in &mut supported_configs_range {
             debug!(
                 "supported_config ch {} min_sr {:?} max_sr {:?} buf_size {:?} sample_fmt {:?}",
@@ -70,6 +75,7 @@ impl Equalizer {
             sample_rate: cpal::SampleRate(44100),
             buffer_size: cpal::BufferSize::Default, // TODO: magic numbers for buffer cause ALSA panics
         };
+        let device = device.unwrap();
 
         Ok(Equalizer {
             core: Arc::new(Mutex::new(DSP::new())), // TODO: extend to different formats?
@@ -80,56 +86,45 @@ impl Equalizer {
         })
     }
 
-    pub fn connect(&mut self) -> () {
+    pub fn connect(&mut self) -> Result<(), Error> {
         let err_fn = move |err| {
             error!("An error ocurred on stream: {}", err);
         };
         let core_arc_clone = self.core.clone(); // local reference that is shared with the closure
-        let stream = self
-            .device
-            .build_input_stream(
-                &self.config,
-                move |data, _: &cpal::InputCallbackInfo| {
-                    // note to self -> because rust moves all what closure captures, need a cloned Arc reference and thread safety -> Mutex
-                    // TODO: add a DSP module function
-                    // stream events etc here
-                    info!("Data received from CPAL, length {}", data.len());
-                    if let Ok(core) = core_arc_clone.try_lock() {
-                        core.send(data);
-                    }
-                },
-                err_fn,
-            )
-            .expect("cannot create a stream!");
+        let stream = self.device.build_input_stream(
+            &self.config,
+            move |data, _: &cpal::InputCallbackInfo| {
+                // note to self -> because rust moves all what closure captures, need a cloned Arc reference and thread safety -> Mutex
+                // stream events etc here
+                info!("Data received from CPAL, length {}", data.len());
+                if let Ok(core) = core_arc_clone.try_lock() {
+                    core.send(data);
+                }
+            },
+            err_fn,
+        )?;
 
         self.stream = Some(stream);
+        Ok(())
     }
 
-    pub fn play(&self) -> Result<(), &'static str> {
+    pub fn play(&self) -> Result<(), Error> {
         match &self.stream {
-            Some(_stream) => {
-                self.stream
-                    .as_ref()
-                    .unwrap()
-                    .play()
-                    .expect("cannot play the audio stream!"); // TODO: how to handle errors properly!!!??
+            Some(stream) => {
+                stream.play()?;
                 Ok(())
             }
-            None => Err("No stream set! Run connect first!"),
+            None => Err(Error::StreamOperation(StreamOp::Play)),
         }
     }
 
-    pub fn pause(&self) -> Result<(), &'static str> {
+    pub fn pause(&self) -> Result<(), Error> {
         match &self.stream {
-            Some(_stream) => {
-                self.stream
-                    .as_ref()
-                    .unwrap()
-                    .pause()
-                    .expect("cannot stop the audio stream!"); // TODO: how to handle errors properly!!!??
+            Some(stream) => {
+                stream.pause()?;
                 Ok(())
             }
-            None => Err("No stream set! Run connect first!"),
+            None => Err(Error::StreamOperation(StreamOp::Pause)),
         }
     }
 

@@ -893,6 +893,7 @@ dependencies = [
 name = "rustalizer"
 version = "0.1.0"
 dependencies = [
+ "anyhow 1.0.32 (registry+https://github.com/rust-lang/crates.io-index)",
  "cairo-rs 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cpal 0.12.1",
  "gdk 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)",
