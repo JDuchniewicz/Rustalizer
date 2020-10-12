@@ -114,7 +114,8 @@ where
 
 // TODO: write docs
 // converts the input FFT data to num_bins size
-pub fn to_bins<T>(data: Vec<Cell<T>>, num_bins: usize) -> Result<Vec<usize>, Error>
+pub fn to_bins<T>(data: Vec<Cell<T>>, num_bins: Option<usize>) -> Result<Vec<usize>, Error>
+// Two choices for frequency bins, either even_spaced or industry
 // TODO: probably need a result for checking, the buffer should be discarded asap?
 // INCOMING DATA IS 0?>????
 where
@@ -134,6 +135,30 @@ where
     if data.len() > 44100 {
         return Err(Error::FFTOperation);
     }
+
+    match num_bins {
+        Some(bins) => Ok(bins_custom(data, bins)),
+        None => Ok(bins_standard(data)),
+    }
+}
+
+fn bins_standard<T>(data: Vec<Cell<T>>) -> Vec<usize> {
+    // normal bins algo with 21 frequency bins
+    Vec::new()
+}
+
+fn bins_custom<T>(data: Vec<Cell<T>>, num_bins: usize) -> Vec<usize>
+// TODO: repair it so center frequency is proper
+where
+    T: Copy
+        + std::fmt::Display
+        + std::ops::Mul<Output = T>
+        + std::ops::Add<Output = T>
+        + std::ops::AddAssign
+        + std::convert::From<f32>,
+    f32: std::convert::From<T>,
+{
+    // custom bins algo
     let bin_width: usize = ((data.len() / 4) as f32 / num_bins as f32).ceil() as usize;
     let mut bin_idx: usize = 1; // index from 1 but store at 0
     let mut freq_magnitude: f32;
@@ -164,7 +189,7 @@ where
     for i in 0..normalized.len() {
         info!("NormBin {} value {}", i, normalized[i]);
     }
-    Ok(normalized)
+    normalized
 }
 
 // tests on floats TODO: add tests for i16?

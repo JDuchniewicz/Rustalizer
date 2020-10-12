@@ -84,14 +84,16 @@ pub struct Graph {
     pub data: RingBuffer<Vec<usize>>, // a ring buffer of vectors of data
     pub area: DrawingArea,
     horizontal_layout: gtk::Box,
+    bins: Option<usize>,
 }
 
 impl Graph {
-    pub fn new(width: i32, height: i32) -> Graph {
+    pub fn new(width: i32, height: i32, bins: Option<usize>) -> Graph {
         let g = Graph {
             data: RingBuffer::new(16),
             area: DrawingArea::new(),
             horizontal_layout: gtk::Box::new(gtk::Orientation::Horizontal, 0),
+            bins,
         };
         g.area.set_size_request(width, height);
         g.horizontal_layout.pack_start(&g.area, true, true, 0);
@@ -118,9 +120,9 @@ impl Graph {
         ctx.fill();
         ctx.set_line_width(0.5);
 
-        // Draw it 20 on 30 cells
+        // Draw it 20 on 30 cells //TODO: adjust to bins number
         // go column by column altering colours and drawing up with a magnitude
-        let x_incr = width / 20.;
+        let x_incr = width / self.bins.unwrap_or(21) as f64; // TODO: default is 21?
         let y_incr = height / 30.;
         //dbg!(x_incr, y_incr);
         let y_sep = 1.;
@@ -152,6 +154,7 @@ impl Graph {
             }
         }
         error!("after drawing");
+        //TODO : draw labels undernath
     }
 
     pub fn invalidate(&self) {

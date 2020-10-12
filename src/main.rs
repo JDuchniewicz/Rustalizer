@@ -19,12 +19,25 @@ use std::rc::Rc;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
+/// Sound visualization and (maybe equalization) for audio streams
+///
+/// BOOP
 struct Cli {
+    /// Specify display type, GUI for a GTK window based rendering, or TODO :)
+    #[structopt(name = "mode", long, short)]
     app_mode: String,
+    /// Pass the name of monitored device, obtained by running "rustalizer -q"
+    #[structopt(name = "device", long, short)]
     device_name: Option<String>,
+    /// Pass the name of audio host, obtained by running "rustalizer -q"
+    #[structopt(name = "host", long, short)]
     host_name: Option<String>,
+    /// Display available devices and hosts
     #[structopt(short, long)]
     query: bool,
+    /// Number of frequency bins displayed, if empty then traditional number of bins is displayed
+    #[structopt(short, long)]
+    bins: Option<usize>,
 }
 
 fn main() -> Result<()> {
@@ -44,8 +57,9 @@ fn main() -> Result<()> {
     // TODO: depending on the option, change the source
     let host_name_copy = args.host_name.clone(); // TODO: must I do this dance?
     let device_name_copy = args.device_name.clone();
+    let bins_copy = args.bins.clone();
     let equalizer = Rc::new(RefCell::new(
-        Equalizer::new(&device_name_copy, &host_name_copy).with_context(|| {
+        Equalizer::new(&device_name_copy, &host_name_copy, bins_copy).with_context(|| {
             format!(
                 "Cannot create Equalizer backend for host: {} and device: {}",
                 device_name_copy.unwrap_or("Default".to_string()),
@@ -57,7 +71,7 @@ fn main() -> Result<()> {
     match args.app_mode.as_str() {
         "GUI" => {
             let application = app::GuiApp::new("MyApp");
-            application.build_ui(equalizer.clone()); // move the cloned rc to app closure -> now it also owns it
+            application.build_ui(equalizer.clone(), args.bins); // move the cloned rc to app closure -> now it also owns it
             equalizer
                 .borrow_mut()
                 .connect()

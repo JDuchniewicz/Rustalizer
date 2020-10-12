@@ -20,7 +20,7 @@ pub struct DSP {
 }
 
 impl DSP {
-    pub fn new() -> DSP {
+    pub fn new(bins: Option<usize>) -> DSP {
         let (data_in_sender, data_in_receiver) = mpsc::channel();
         let (data_out_sender, data_out_receiver) = mpsc::channel();
 
@@ -36,10 +36,9 @@ impl DSP {
                     let fft_data = fft::fft(payload);
 
                     // bin the processed samples to several bins
-                    let binned = fft::to_bins(fft_data, 20); // TODO: magic numbers!
+                    let binned = fft::to_bins(fft_data, bins);
                     if binned.is_ok() {
                         data_out_sender.send(Message::Processed(binned.unwrap()));
-                    // TODO: change the message payload?
                     } else {
                         error!("{}", binned.err().unwrap());
                     }

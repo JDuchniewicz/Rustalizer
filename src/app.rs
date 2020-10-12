@@ -56,8 +56,8 @@ impl GuiApp {
                 if let Some(payload) = equalizer.borrow().get_processed_samples() {
                     // This is raw FFT, could be formatted better -> 20 frequency bins and unwrap
                     // from cell
-                    if let Err(_) = graph.borrow_mut().push(payload) {
-                        error!("Graph is full, data is flowing in too fast!");
+                    if let Err(err) = graph.borrow_mut().push(payload) {
+                        error!("{}", err);
                     }
                 }
                 glib::Continue(true)
@@ -66,7 +66,7 @@ impl GuiApp {
     }
 
     // This builds the general UI of the application (for now also the main UI - equalizer graph)
-    pub fn build_ui(&self, equalizer: Rc<RefCell<Equalizer>>) -> () {
+    pub fn build_ui(&self, equalizer: Rc<RefCell<Equalizer>>, bins: Option<usize>) -> () {
         self.application.connect_activate(move |app| {
             let window = gtk::ApplicationWindow::new(app);
 
@@ -87,7 +87,7 @@ impl GuiApp {
             window.set_title("Rustalizer"); // lifetime issues with closures, TODO: fix this
             window.set_default_size(XSIZE, YSIZE);
 
-            let equalizer_graph = graph::Graph::new(XSIZE - 2 * XMARGIN, YSIZE - 2 * YMARGIN);
+            let equalizer_graph = graph::Graph::new(XSIZE - 2 * XMARGIN, YSIZE - 2 * YMARGIN, bins);
             // connect refreshing context to gtk
             equalizer_graph.attach_to(&vertical_layout);
             // share out the graph object, now it is Rc

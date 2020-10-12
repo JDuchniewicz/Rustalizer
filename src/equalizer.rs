@@ -20,6 +20,7 @@ impl Equalizer {
     pub fn new(
         device_name: &Option<String>,
         host_name: &Option<String>,
+        bins: Option<usize>,
     ) -> Result<Equalizer, Error> {
         let mut host = cpal::default_host(); // default host [ALSA]
         if let Some(hostname) = host_name.as_ref() {
@@ -78,7 +79,7 @@ impl Equalizer {
         let device = device.unwrap();
 
         Ok(Equalizer {
-            core: Arc::new(Mutex::new(DSP::new())), // TODO: extend to different formats?
+            core: Arc::new(Mutex::new(DSP::new(bins))), // TODO: extend to different formats?
             device,
             config,
             stream: None,
