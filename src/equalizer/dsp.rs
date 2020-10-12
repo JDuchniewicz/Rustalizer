@@ -40,7 +40,7 @@ impl DSP {
                     if binned.is_ok() {
                         if let Err(err) = data_out_sender.send(Message::Processed(binned.unwrap()))
                         {
-                            error!("Failed to send data to DSP: {}", err);
+                            error!("Failed to send data to DSP: {}", err); //TODO: add timing and debug
                         }
                     } else {
                         error!("{}", binned.err().unwrap());

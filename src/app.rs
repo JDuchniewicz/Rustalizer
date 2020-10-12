@@ -85,13 +85,23 @@ impl GuiApp {
             //            let area = gtk::DrawingArea::new(); // no need for a global drawing area, each graph
             //            implements their own
             window.set_title("Rustalizer"); // lifetime issues with closures, TODO: fix this
-            window.set_default_size(XSIZE, YSIZE);
+            window.set_default_size(XSIZE, YSIZE + 50);
 
-            let equalizer_graph = graph::Graph::new(XSIZE - 2 * XMARGIN, YSIZE - 2 * YMARGIN, bins);
+            let bins_clone = bins.clone();
+            let equalizer_graph =
+                graph::Graph::new(XSIZE - 2 * XMARGIN, YSIZE - 2 * YMARGIN, bins_clone);
             // connect refreshing context to gtk
             equalizer_graph.attach_to(&vertical_layout);
             // share out the graph object, now it is Rc
             let equalizer_graph = GuiApp::connect_graph(equalizer_graph);
+
+            // add frequency labels
+            let horizontal_layout = gtk::Box::new(
+                gtk::Orientation::Horizontal,
+                XSIZE / bins_clone.unwrap_or(31) as i32,
+            );
+            GuiApp::add_labels(&horizontal_layout, XSIZE, bins_clone);
+            vertical_layout.pack_start(&horizontal_layout, true, true, 0);
 
             GuiApp::setup_timeout(&equalizer, &equalizer_graph);
             window.add(&vertical_layout);
@@ -119,5 +129,28 @@ impl GuiApp {
             }),
         );
         graph
+    }
+
+    fn add_labels(layout: &gtk::Box, width: i32, bins: Option<usize>) {
+        match bins {
+            Some(bin_nr) => {
+                for i in 0..bin_nr {
+                    let label = gtk::Label::new(Some(&(i.to_string() + " kHz")));
+                    layout.pack_start(&label, true, true, 0);
+                }
+            }
+            None => {
+                let vals = vec![
+                    "20 Hz", "25 Hz", "31 Hz", "40 Hz", "50 Hz", "63 Hz", "80 Hz", "100 Hz",
+                    "125 Hz", "160 Hz", "200 Hz", "250 Hz", "315 Hz", "400 Hz", "500 Hz", "630 Hz",
+                    "800 Hz", "1 kHz", "1.2 kHz", "1.6 kHz", "2 kHz", "2.5 kHz", "3.1 kHz",
+                    "4 kHz", "5 kHz", "6.3 kHz", "8 kHz", "10 kHz", "12 kHz", "16 kHz", "20 kHz",
+                ];
+                for i in 0..vals.len() {
+                    let label = gtk::Label::new(Some(vals[i]));
+                    layout.pack_start(&label, true, true, 0);
+                }
+            }
+        }
     }
 }

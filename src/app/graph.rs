@@ -122,7 +122,7 @@ impl Graph {
 
         // Draw it 20 on 30 cells //TODO: adjust to bins number
         // go column by column altering colours and drawing up with a magnitude
-        let x_incr = width / self.bins.unwrap_or(21) as f64; // TODO: default is 21?
+        let x_incr = width / self.bins.unwrap_or(31) as f64; // TODO: default is 21?
         let y_incr = height / 30.;
         //dbg!(x_incr, y_incr);
         let y_sep = 1.;

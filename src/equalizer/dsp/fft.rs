@@ -153,7 +153,7 @@ where
         + std::convert::From<f32>,
     f32: std::convert::From<T>,
 {
-    // normal bins algo with 21 frequency bins and their centers
+    // normal bins algo with 31 frequency bins and their centers
     let upper_frequencies = vec![
         20, 25, 31, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000, 1200,
         1600, 2000, 2500, 3100, 4000, 5000, 6300, 8000, 10000, 12000, 16000, 20000,
