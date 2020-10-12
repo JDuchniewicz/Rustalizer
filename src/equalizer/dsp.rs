@@ -38,7 +38,10 @@ impl DSP {
                     // bin the processed samples to several bins
                     let binned = fft::to_bins(fft_data, bins);
                     if binned.is_ok() {
-                        data_out_sender.send(Message::Processed(binned.unwrap()));
+                        if let Err(err) = data_out_sender.send(Message::Processed(binned.unwrap()))
+                        {
+                            error!("Failed to send data to DSP: {}", err);
+                        }
                     } else {
                         error!("{}", binned.err().unwrap());
                     }

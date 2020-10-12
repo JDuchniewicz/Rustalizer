@@ -11,7 +11,7 @@ use std::thread;
 use std::time::Duration;
 
 // TODO: add config file with configs?
-const UPDATE_TIMEOUT: u64 = 300; // ms
+const UPDATE_TIMEOUT: u64 = 50; // ms
 
 // choose the proper application, whether console ncurses or fullfledged gui app?
 pub struct GuiApp {

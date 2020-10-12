@@ -106,7 +106,7 @@ impl Graph {
     }
 
     pub fn push(&mut self, data: Vec<usize>) -> Result<(), Error> {
-        error!("Received data");
+        info!("Received data");
         self.data.push(data)?;
         self.invalidate();
         Ok(())
@@ -129,14 +129,20 @@ impl Graph {
         let x_sep = 1.;
         let mut x_pos = 0.;
         let mut y_pos;
-        error!("before drawing");
+        info!("before drawing");
 
         if let Ok(data) = self.data.pop() {
             for i in data {
-                let mut y_ctr = i;
+                let mut y_ctr; // TODO: adjust scaling
+                if i > 0 && i < 100 {
+                    y_ctr = 1;
+                } else {
+                    y_ctr = i / 100;
+                }
                 y_pos = height - y_incr - y_sep;
                 // print each column
-                if i > 30 {
+                if i > 3000 {
+                    //TODO: adjust scaling
                     y_ctr = 30;
                 }
                 for _ in 0..y_ctr as usize {
@@ -153,13 +159,14 @@ impl Graph {
                 x_pos += x_incr;
             }
         }
-        error!("after drawing");
+        info!("after drawing");
+        //self.draw_labels()
         //TODO : draw labels undernath
     }
 
     pub fn invalidate(&self) {
         if let Some(win) = self.area.get_window() {
-            error!("Invalidate called");
+            info!("Invalidate called");
             let (x, y) = self
                 .area
                 .translate_coordinates(&self.area, 0, 0)
@@ -172,6 +179,11 @@ impl Graph {
             };
             win.invalidate_rect(Some(&rect), true); // TODO: apparently invalidate does not work?
         }
+    }
+
+    fn draw_labels(&self) {
+
+        // dara
     }
 }
 

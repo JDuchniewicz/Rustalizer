@@ -35,7 +35,7 @@ struct Cli {
     /// Display available devices and hosts
     #[structopt(short, long)]
     query: bool,
-    /// Number of frequency bins displayed, if empty then traditional number of bins is displayed
+    /// Number of frequency bins displayed, if empty then a common frequency binning is applied
     #[structopt(short, long)]
     bins: Option<usize>,
 }

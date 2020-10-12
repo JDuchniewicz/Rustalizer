@@ -142,13 +142,66 @@ where
     }
 }
 
-fn bins_standard<T>(data: Vec<Cell<T>>) -> Vec<usize> {
-    // normal bins algo with 21 frequency bins
-    Vec::new()
+// This is the most often seen bins partitioning on the internet
+fn bins_standard<T>(data: Vec<Cell<T>>) -> Vec<usize>
+where
+    T: Copy
+        + std::fmt::Display
+        + std::ops::Mul<Output = T>
+        + std::ops::Add<Output = T>
+        + std::ops::AddAssign
+        + std::convert::From<f32>,
+    f32: std::convert::From<T>,
+{
+    // normal bins algo with 21 frequency bins and their centers
+    let upper_frequencies = vec![
+        20, 25, 31, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000, 1200,
+        1600, 2000, 2500, 3100, 4000, 5000, 6300, 8000, 10000, 12000, 16000, 20000,
+    ];
+    let mut upper_indices_remapped = Vec::<usize>::with_capacity(upper_frequencies.len());
+    for i in 0..upper_frequencies.len() {
+        upper_indices_remapped
+            .push((upper_frequencies[i] / upper_frequencies.last().unwrap() * data.len()) as usize);
+    }
+    let mut bin_idx: usize = 1; // index from 1 but store at 0
+    let mut freq_magnitude: f32;
+    let mut bins = Vec::<f32>::with_capacity(upper_frequencies.len());
+    for _ in 0..upper_frequencies.len() {
+        bins.push(0.);
+    }
+
+    // iterate through the input vector and bin the data -> remap len to frequency!
+    for i in (0..data.len() / 2).step_by(2) {
+        if i / 2 > bin_idx * upper_indices_remapped[bin_idx - 1] {
+            bin_idx += 1;
+        }
+        //debug!("incoming data for i {} is {}", i, data[i].get());
+        freq_magnitude = Into::<f32>::into(
+            data[i].get() * data[i].get() + data[i + 1].get() * data[i + 1].get(),
+        );
+        //debug!("the magnitude at idx {} is {}", i, freq_magnitude);
+        bins[bin_idx - 1] += freq_magnitude;
+    }
+
+    // finally they should be normalized
+    let normalized = bins
+        .iter()
+        .enumerate()
+        .map(|(i, val)| {
+            if i == 0 {
+                return *val as usize / upper_frequencies[0];
+            }
+            *val as usize / (upper_frequencies[i] - upper_frequencies[i - 1])
+        })
+        .collect::<Vec<usize>>();
+
+    for i in 0..normalized.len() {
+        info!("NormBin {} value {}", i, normalized[i]);
+    }
+    normalized
 }
 
 fn bins_custom<T>(data: Vec<Cell<T>>, num_bins: usize) -> Vec<usize>
-// TODO: repair it so center frequency is proper
 where
     T: Copy
         + std::fmt::Display
