@@ -8,24 +8,24 @@ Currently it uses GTK for displaying GUI, and cpal for audio interfacing, thus b
 
 ## Installation
 
-`$ git clone https://github.com/JDuchniewicz/Rustalizer/`
-`cd Rustalizer`
-`cargo install --path .`
-After installation, if PATH contains `cargo/bin` folder, can be called from command-line with `rustalizer <opts>`
+`$ git clone https://github.com/JDuchniewicz/Rustalizer/`  
+`$ cd Rustalizer`  
+`$ cargo install --path .`  
+After installation, if PATH contains `cargo/bin` folder, can be called from command-line with `$ rustalizer <opts>`  
 
 ## User guide
-Run the application without installation:
+Run the application without installation:  
 `cargo run -- --help`
 
-or with:
+or with:  
 `rustalizer --help`
 
 ## Roadmap
 
--[] Console-only rendering
--[] Equalizer pass-through
--[] Multiple-channel support
--[] Visualization customization (colors / shapes)
+- [ ] Console-only rendering
+- [ ] Equalizer pass-through
+- [ ] Multiple-channel support
+- [ ] Visualization customization (colors / shapes)
 
 ## License
 
