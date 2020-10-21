@@ -9,6 +9,8 @@ extern crate simplelog;
 mod app;
 mod equalizer;
 mod errors;
+mod ring_buffer;
+mod tui;
 
 use anyhow::{Context, Result};
 use equalizer::Equalizer;
@@ -83,9 +85,19 @@ fn main() -> Result<()> {
             application.run();
             Ok(())
         }
-        _ => {
-            error!("Unknown option, defaulting to console!"); //TODO: fix later once console is supported
-            process::exit(1);
+        "TUI" | _ => {
+            equalizer
+                .borrow_mut()
+                .connect()
+                .with_context(|| format!("cannot connect to the audio stream"))?;
+            equalizer
+                .borrow()
+                .play()
+                .with_context(|| format!("cannot play the audio stream!"))?;
+            let mut application = tui::TerminalApp::new(equalizer)?;
+            application.run()?;
+            // handle TUI stuff
+            Ok(())
         }
     }
 }

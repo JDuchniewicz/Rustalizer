@@ -21,18 +21,20 @@ pub enum Error {
     StreamOperation(StreamOp),
     BufferOperation(BufferOp),
     FFTOperation,
+    IO(std::io::Error),
 }
 
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Error::NoCpalDevice => None,
-            Error::BuildStream(ref err) => Some(err),
-            Error::PlayStream(ref err) => Some(err),
-            Error::PauseStream(ref err) => Some(err),
+            Error::BuildStream(err) => Some(err),
+            Error::PlayStream(err) => Some(err),
+            Error::PauseStream(err) => Some(err),
             Error::StreamOperation(_) => None,
             Error::BufferOperation(_) => None,
             Error::FFTOperation => None,
+            Error::IO(err) => Some(err),
         }
     }
 }
@@ -57,6 +59,7 @@ impl std::fmt::Display for Error {
                 BufferOp::Pop => write!(f, "Pop failed! The RingBuffer is empty!"),
             },
             Error::FFTOperation=> write!(f, "The input data was greater than the sampling rate, probably CPAL hiccup - ignoring"),
+            Error::IO(_) => write!(f, "Could not create terminal backend!"),
         }
     }
 }
@@ -76,5 +79,11 @@ impl From<cpal::PlayStreamError> for Error {
 impl From<cpal::PauseStreamError> for Error {
     fn from(err: cpal::PauseStreamError) -> Error {
         Error::PauseStream(err)
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Error {
+        Error::IO(err)
     }
 }
