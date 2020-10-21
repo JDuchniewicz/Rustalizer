@@ -3,8 +3,10 @@
 A simple audio frequency visualizer made in Rust. 
 
 Currently it uses GTK for displaying GUI, and cpal for audio interfacing, thus being cross-platform.
+The TUI version utilizes `tui-rs` and `crossterm` for terminal backend.
 
-![Playback](media/playing.gif)
+![GUI Playback](media/playing.gif)
+![TUI Playback](media/playing_tui.gif)
 
 ## Installation
 
