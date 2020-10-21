@@ -20,5 +20,5 @@ cpal = "^0.12.1"
 tui = { version = "^0.12", default-features = false, features = ['crossterm'] }
 crossterm = "^0.17"
 
-[patch.crates-io]
+#[patch.crates-io]
 #cpal = { path = "/home/jduchniewicz/.cargo/registry/src/github.com-1ecc6299db9ec823/cpal-0.12.1/" }

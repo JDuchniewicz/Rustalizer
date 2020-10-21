@@ -135,7 +135,7 @@ impl GuiApp {
         match bins {
             Some(bin_nr) => {
                 for i in 0..bin_nr {
-                    let label = gtk::Label::new(Some(&(i.to_string() + " kHz")));
+                    let label = gtk::Label::new(Some(&(i.to_string() + " kHz"))); // TODO: they are not kHz, could probably make one place for such static stuff
                     layout.pack_start(&label, true, true, 0);
                 }
             }

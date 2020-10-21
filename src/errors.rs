@@ -22,6 +22,8 @@ pub enum Error {
     BufferOperation(BufferOp),
     FFTOperation,
     IO(std::io::Error),
+    MPSCRecv(std::sync::mpsc::RecvError),
+    Crossterm(crossterm::ErrorKind),
 }
 
 impl std::error::Error for Error {
@@ -35,6 +37,8 @@ impl std::error::Error for Error {
             Error::BufferOperation(_) => None,
             Error::FFTOperation => None,
             Error::IO(err) => Some(err),
+            Error::MPSCRecv(err) => Some(err),
+            Error::Crossterm(err) => Some(err),
         }
     }
 }
@@ -60,6 +64,8 @@ impl std::fmt::Display for Error {
             },
             Error::FFTOperation=> write!(f, "The input data was greater than the sampling rate, probably CPAL hiccup - ignoring"),
             Error::IO(_) => write!(f, "Could not create terminal backend!"),
+            Error::MPSCRecv(_) => write!(f, "The receiver queue is empty!"),
+            Error::Crossterm(_) => write!(f, "Could not create TUI"),
         }
     }
 }
@@ -85,5 +91,17 @@ impl From<cpal::PauseStreamError> for Error {
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Error {
         Error::IO(err)
+    }
+}
+
+impl From<std::sync::mpsc::RecvError> for Error {
+    fn from(err: std::sync::mpsc::RecvError) -> Error {
+        Error::MPSCRecv(err)
+    }
+}
+
+impl From<crossterm::ErrorKind> for Error {
+    fn from(err: crossterm::ErrorKind) -> Error {
+        Error::Crossterm(err)
     }
 }

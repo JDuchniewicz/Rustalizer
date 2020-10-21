@@ -53,6 +53,21 @@ impl<T: Default + Clone> RingBuffer<T> {
         }
     }
 
+    pub fn top(&self) -> Result<T, Error> {
+        if self.empty() {
+            Err(Error::BufferOperation(BufferOp::Pop))
+        } else {
+            let idx = self.mask(self.read.wrapping_add(1));
+            debug!(
+                "RB top, idx {}, write {} read {}",
+                idx,
+                self.write,
+                self.read.wrapping_add(1)
+            );
+            Ok(self.data[idx].clone())
+        }
+    }
+
     pub fn full(&self) -> bool {
         self.size() == self.data.capacity()
     }

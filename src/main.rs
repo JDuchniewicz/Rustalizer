@@ -95,7 +95,7 @@ fn main() -> Result<()> {
                 .play()
                 .with_context(|| format!("cannot play the audio stream!"))?;
             let mut application = tui::TerminalApp::new(equalizer)?;
-            application.run()?;
+            application.run(args.bins)?;
             // handle TUI stuff
             Ok(())
         }
