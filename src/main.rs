@@ -25,7 +25,8 @@ use structopt::StructOpt;
 ///
 /// BOOP
 struct Cli {
-    /// Specify display type, GUI for a GTK window based rendering, or TODO :)
+    /// Specify display type, GUI for a GTK window based rendering, or TUI for a terminal based
+    /// interface
     #[structopt(name = "mode", long, short)]
     app_mode: String,
     /// Pass the name of monitored device, obtained by running "rustalizer -q"
