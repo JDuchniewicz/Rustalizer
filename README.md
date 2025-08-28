@@ -1,6 +1,6 @@
 # Rustalizer
 
-A simple audio frequency visualizer made in Rust. 
+A simple audio frequency visualizer made with Rust. 
 
 Currently it uses GTK for displaying GUI, and cpal for audio interfacing, thus being cross-platform.
 The TUI version utilizes `tui-rs` and `crossterm` for terminal backend.
